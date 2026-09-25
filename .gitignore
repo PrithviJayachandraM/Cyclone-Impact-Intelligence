@@ -1,0 +1,22 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+service-account*.json
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+.venv/
+venv/
+*.egg-info/
+
+# Build and editor files
+build/
+dist/
+.vscode/
+.idea/

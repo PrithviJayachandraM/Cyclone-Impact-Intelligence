@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cyclone historical track map</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 0; color: #172033; }
+      header, main { max-width: 980px; margin: auto; padding: 1rem; }
+      header { border-bottom: 1px solid #d9e1ec; }
+      h1 { margin: 0; font-size: 1.5rem; }
+      #map { height: 520px; background: #edf5fb; border: 1px solid #b9cbe0; }
+      #metadata { margin: 1rem 0; } select { padding: .45rem; }
+      .notice { color: #48576a; font-size: .9rem; }
+    </style>
+  </head>
+  <body>
+    <header><h1>Historical cyclone tracks</h1><p class="notice">Decision-support prototype. Official IMD information remains authoritative.</p></header>
+    <main>
+      <label for="cyclone">Cyclone</label> <select id="cyclone"></select>
+      <p id="metadata"></p><div id="map" aria-label="Cyclone track map"></div>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

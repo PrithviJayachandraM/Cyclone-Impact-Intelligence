@@ -1,0 +1,56 @@
+[
+  {
+    "cyclone_id": "phailin-2013",
+    "timestamp": "2013-10-08T03:00:00Z",
+    "latitude": 12.0,
+    "longitude": 96.0,
+    "wind_speed_kph": 46.0,
+    "pressure_hpa": 1004.0,
+    "source_type": "observed"
+  },
+  {
+    "cyclone_id": "phailin-2013",
+    "timestamp": "2013-10-09T00:00:00Z",
+    "latitude": 13.0,
+    "longitude": 93.5,
+    "wind_speed_kph": 56.0,
+    "pressure_hpa": 1002.0,
+    "source_type": "observed"
+  },
+  {
+    "cyclone_id": "phailin-2013",
+    "timestamp": "2013-10-10T06:00:00Z",
+    "latitude": 15.0,
+    "longitude": 90.5,
+    "wind_speed_kph": 120.0,
+    "pressure_hpa": 984.0,
+    "source_type": "observed"
+  },
+  {
+    "cyclone_id": "phailin-2013",
+    "timestamp": "2013-10-11T12:00:00Z",
+    "latitude": 16.8,
+    "longitude": 87.7,
+    "wind_speed_kph": 213.0,
+    "pressure_hpa": 940.0,
+    "source_type": "observed"
+  },
+  {
+    "cyclone_id": "phailin-2013",
+    "timestamp": "2013-10-12T15:00:00Z",
+    "latitude": 19.1,
+    "longitude": 85.2,
+    "wind_speed_kph": 213.0,
+    "pressure_hpa": 940.0,
+    "source_type": "observed"
+  },
+  {
+    "cyclone_id": "phailin-2013",
+    "timestamp": "2013-10-13T00:00:00Z",
+    "latitude": 20.5,
+    "longitude": 84.5,
+    "wind_speed_kph": 139.0,
+    "pressure_hpa": 976.0,
+    "source_type": "observed"
+  }
+]

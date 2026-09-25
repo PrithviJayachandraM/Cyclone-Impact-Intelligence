@@ -1,0 +1,10 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+COPY src /app/src
+COPY web /app/web
+COPY data/normalized /app/data/normalized
+ENV PYTHONPATH=/app/src
+ENV PORT=8080
+EXPOSE 8080
+CMD ["python", "-m", "cyclone.main"]
