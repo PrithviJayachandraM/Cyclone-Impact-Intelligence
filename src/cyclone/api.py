@@ -11,6 +11,7 @@ from urllib.parse import parse_qs, urlparse
 
 from cyclone.enrichment import EnrichmentRepository
 from cyclone.repository import HistoricalTrackRepository
+from cyclone.risk import RiskRepository
 
 
 STATIC_DIRECTORY = Path(__file__).parents[2] / "web"
@@ -20,6 +21,7 @@ def create_handler(
     repository: HistoricalTrackRepository,
     google_maps_api_key: str | None = None,
     enrichment_repository: EnrichmentRepository | None = None,
+    risk_repository: RiskRepository | None = None,
 ) -> type[BaseHTTPRequestHandler]:
     class CycloneHandler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:  # noqa: N802
@@ -32,16 +34,23 @@ def create_handler(
             elif path == "/map-config":
                 self.send_json(HTTPStatus.OK, {"google_maps_api_key": google_maps_api_key})
             elif path.startswith("/cyclones/") and path.endswith("/layers"):
-                self.send_enrichment(enrichment_repository.layers(path.removeprefix("/cyclones/").removesuffix("/layers").strip("/")) if enrichment_repository else None)
+                self.send_available(enrichment_repository.layers(self.cyclone_id(path, "layers")) if enrichment_repository else None, "Enrichment data is not configured")
             elif path.startswith("/cyclones/") and path.endswith("/locations"):
-                self.send_enrichment(enrichment_repository.locations_geojson(path.removeprefix("/cyclones/").removesuffix("/locations").strip("/")) if enrichment_repository else None)
+                self.send_available(enrichment_repository.locations_geojson(self.cyclone_id(path, "locations")) if enrichment_repository else None, "Enrichment data is not configured")
+            elif path.startswith("/cyclones/") and path.endswith("/risk"):
+                self.send_available(risk_repository.risk_geojson(self.cyclone_id(path, "risk")) if risk_repository else None, "Risk data is not configured")
             elif path.startswith("/locations/") and path.endswith("/features"):
                 cyclone_id = parse_qs(request.query).get("cyclone_id", [""])[0]
-                vector = enrichment_repository.feature_vector(cyclone_id, path.removeprefix("/locations/").removesuffix("/features").strip("/")) if enrichment_repository else None
+                location_id = path.removeprefix("/locations/").removesuffix("/features").strip("/")
+                vector = enrichment_repository.feature_vector(cyclone_id, location_id) if enrichment_repository else None
                 self.send_json(HTTPStatus.OK, vector) if vector else self.send_json(HTTPStatus.NOT_FOUND, {"error": "Location feature vector not found"})
+            elif path.startswith("/locations/") and path.endswith("/risk"):
+                cyclone_id = parse_qs(request.query).get("cyclone_id", [""])[0]
+                location_id = path.removeprefix("/locations/").removesuffix("/risk").strip("/")
+                score = risk_repository.location_risk(cyclone_id, location_id) if risk_repository else None
+                self.send_json(HTTPStatus.OK, score) if score else self.send_json(HTTPStatus.NOT_FOUND, {"error": "Location risk not found"})
             elif path.startswith("/cyclones/") and path.endswith("/track"):
-                cyclone_id = path.removeprefix("/cyclones/").removesuffix("/track").strip("/")
-                track = repository.track_geojson(cyclone_id)
+                track = repository.track_geojson(self.cyclone_id(path, "track"))
                 self.send_json(HTTPStatus.OK, track) if track else self.send_json(HTTPStatus.NOT_FOUND, {"error": "Cyclone not found"})
             elif path in {"/", "/index.html"}:
                 self.send_file(STATIC_DIRECTORY / "index.html")
@@ -50,9 +59,13 @@ def create_handler(
             else:
                 self.send_json(HTTPStatus.NOT_FOUND, {"error": "Not found"})
 
-        def send_enrichment(self, payload: object) -> None:
+        @staticmethod
+        def cyclone_id(path: str, suffix: str) -> str:
+            return path.removeprefix("/cyclones/").removesuffix(f"/{suffix}").strip("/")
+
+        def send_available(self, payload: object, unavailable_message: str) -> None:
             if payload is None:
-                self.send_json(HTTPStatus.SERVICE_UNAVAILABLE, {"error": "Enrichment data is not configured"})
+                self.send_json(HTTPStatus.SERVICE_UNAVAILABLE, {"error": unavailable_message})
             else:
                 self.send_json(HTTPStatus.OK, payload)
 

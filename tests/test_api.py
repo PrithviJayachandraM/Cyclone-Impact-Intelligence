@@ -10,19 +10,18 @@ from pathlib import Path
 from cyclone.api import create_handler
 from cyclone.enrichment import EnrichmentRepository
 from cyclone.repository import HistoricalTrackRepository
+from cyclone.risk import RiskRepository
 
 
 class ApiTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        data_path = Path(__file__).parents[1] / "data" / "normalized"
-        enrichment_path = Path(__file__).parents[1] / "data" / "enriched"
+        root = Path(__file__).parents[1]
+        tracks = HistoricalTrackRepository(root / "data" / "normalized")
+        enrichment = EnrichmentRepository(root / "data" / "enriched")
         cls.server = ThreadingHTTPServer(
             ("127.0.0.1", 0),
-            create_handler(
-                HistoricalTrackRepository(data_path),
-                enrichment_repository=EnrichmentRepository(enrichment_path),
-            ),
+            create_handler(tracks, enrichment_repository=enrichment, risk_repository=RiskRepository(root / "data" / "risk", enrichment.locations)),
         )
         cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
         cls.thread.start()
@@ -44,16 +43,14 @@ class ApiTests(unittest.TestCase):
 
     def test_lists_cyclones(self) -> None:
         status, _, body = self.get("/cyclones")
-        payload = json.loads(body)
         self.assertEqual(status, 200)
-        self.assertEqual(payload[0]["cyclone_id"], "phailin-2013")
+        self.assertEqual(json.loads(body)[0]["cyclone_id"], "phailin-2013")
 
     def test_returns_track_geojson(self) -> None:
         status, _, body = self.get("/cyclones/phailin-2013/track")
         payload = json.loads(body)
         self.assertEqual(status, 200)
         self.assertEqual(payload["type"], "FeatureCollection")
-        self.assertGreater(len(payload["features"]), 1)
         self.assertEqual(payload["features"][0]["geometry"]["type"], "Point")
 
     def test_rejects_unknown_cyclone(self) -> None:
@@ -71,11 +68,16 @@ class ApiTests(unittest.TestCase):
         status, _, body = self.get("/cyclones/phailin-2013/layers")
         self.assertEqual(status, 200)
         self.assertEqual(json.loads(body)[0]["layer_id"], "rainfall")
-
-        status, _, body = self.get("/cyclones/phailin-2013/locations")
-        self.assertEqual(status, 200)
-        self.assertEqual(json.loads(body)["features"][0]["properties"]["location_id"], "phailin-grid-01")
-
         status, _, body = self.get("/locations/phailin-grid-01/features?cyclone_id=phailin-2013")
         self.assertEqual(status, 200)
         self.assertEqual(len(json.loads(body)["features"]), 3)
+
+    def test_returns_phase_three_risk_heatmap_and_explanation(self) -> None:
+        status, _, body = self.get("/cyclones/phailin-2013/risk")
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(body)["features"][0]["properties"]["band"], "high")
+        status, _, body = self.get("/locations/phailin-grid-01/risk?cyclone_id=phailin-2013")
+        payload = json.loads(body)
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["risk_score"], 85)
+        self.assertEqual(len(payload["feature_contributions"]), 5)

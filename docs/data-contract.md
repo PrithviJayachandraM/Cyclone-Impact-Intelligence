@@ -10,7 +10,7 @@ This document defines the canonical names and minimum fields from the Technical 
 | WeatherObservation | `location_id`, `timestamp`, `rainfall`, `wind`, `pressure`, `temperature`, `source` | Phase 2 |
 | Location | `location_id`, `geometry`, `administrative_level`, `name` | GIS DDL only |
 | Exposure | `location_id`, `population`, `roads`, `buildings`, `critical_assets` | Phase 2 |
-| RiskScore | `location_id`, `cyclone_id`, `valid_time`, `score`, `band`, `feature_contributions` | Phase 3 |
+| RiskScore | `location_id`, `cyclone_id`, `valid_time`, `score`, `band`, `feature_contributions` | Implemented in Phase 3 |
 | Advisory | `advisory_id`, `source`, `issued_at`, `valid_from`, `valid_to`, `content/reference` | Phase 5 |
 | Scenario | `scenario_id`, `base_event`, `parameter_changes`, `created_at`, `owner` | Phase 6 |
 
