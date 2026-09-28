@@ -1,69 +1,29 @@
-const mapElement = document.querySelector("#map");
-const selector = document.querySelector("#cyclone");
-const metadata = document.querySelector("#metadata");
-const controls = document.querySelector("#layer-controls");
-const riskDetail = document.querySelector("#risk-detail");
-const layerColors = { rainfall: "#2563eb", elevation: "#15803d", population: "#9333ea" };
-const bandColors = { low: "#22c55e", medium: "#f59e0b", high: "#dc2626" };
-let currentTrack, currentLocations, currentRisk, activeLayers = new Set(), showRisk = true;
+const mapElement = document.querySelector("#map"), selector = document.querySelector("#cyclone"), timeSelector = document.querySelector("#risk-time"), metadata = document.querySelector("#metadata"), controls = document.querySelector("#layer-controls"), riskDetail = document.querySelector("#risk-detail");
+const layerColors = { rainfall: "#2563eb", elevation: "#15803d", population: "#9333ea" }, bandColors = { low: "#22c55e", medium: "#f59e0b", high: "#dc2626" };
+let track, locations, forecasts, risk, activeLayers = new Set(), showRisk = true;
 
-function layerColor(layerId) { return layerColors[layerId] || "#475569"; }
-function riskFor(locationId) { return currentRisk.features.find(feature => feature.properties.location_id === locationId); }
-function allCoordinates() { return [...currentTrack.features.filter(feature => feature.geometry.type === "Point").map(feature => feature.geometry.coordinates), ...currentLocations.features.flatMap(feature => feature.geometry.coordinates[0])]; }
-function polygonPoints(location, x, y) { return location.geometry.coordinates[0].map(point => `${x(point[0])},${y(point[1])}`).join(" "); }
-
-function coordinateFallback() {
-  const coordinates = allCoordinates(), width = 900, height = 520, padding = 45;
-  const longitudes = coordinates.map(point => point[0]), latitudes = coordinates.map(point => point[1]);
-  const minLon = Math.min(...longitudes), maxLon = Math.max(...longitudes), minLat = Math.min(...latitudes), maxLat = Math.max(...latitudes);
-  const x = value => padding + ((value - minLon) / (maxLon - minLon || 1)) * (width - 2 * padding);
-  const y = value => height - (padding + ((value - minLat) / (maxLat - minLat || 1)) * (height - 2 * padding));
-  const points = currentTrack.features.filter(feature => feature.geometry.type === "Point");
-  const trackPath = points.map(point => `${x(point.geometry.coordinates[0])},${y(point.geometry.coordinates[1])}`).join(" ");
-  const contextual = currentLocations.features.flatMap(location => [...activeLayers].map(layerId => `<polygon points="${polygonPoints(location, x, y)}" fill="${layerColor(layerId)}" fill-opacity="0.12" stroke="${layerColor(layerId)}" stroke-width="1"/>`)).join("");
-  const heatmap = showRisk ? currentLocations.features.map(location => { const risk = riskFor(location.properties.location_id); return `<polygon data-location="${location.properties.location_id}" points="${polygonPoints(location, x, y)}" fill="${bandColors[risk.properties.band]}" fill-opacity="0.38" stroke="${bandColors[risk.properties.band]}" stroke-width="3"><title>${location.properties.name}: ${risk.properties.risk_score}/100 (${risk.properties.band})</title></polygon>`; }).join("") : "";
-  mapElement.innerHTML = `<svg viewBox="0 0 ${width} ${height}" width="100%" height="100%" role="img" aria-label="Coordinate plot of observed cyclone track and risk heatmap"><rect width="100%" height="100%" fill="#edf5fb"/>${contextual}${heatmap}<polyline points="${trackPath}" fill="none" stroke="#b62727" stroke-width="4"/>${points.map(point => `<circle cx="${x(point.geometry.coordinates[0])}" cy="${y(point.geometry.coordinates[1])}" r="6" fill="#b62727"><title>${point.properties.timestamp}</title></circle>`).join("")}<text x="20" y="30" fill="#48576a">Coordinate-map fallback (set up a browser-restricted Google Maps key for basemap tiles)</text></svg>`;
+function riskFor(locationId) { return risk.features.find(feature => feature.properties.location_id === locationId); }
+function coordinates() { return [...track.features.filter(feature => feature.geometry.type === "Point").map(feature => feature.geometry.coordinates), ...forecasts.map(point => [point.longitude, point.latitude]), ...locations.features.flatMap(feature => feature.geometry.coordinates[0])]; }
+function polygon(location, x, y) { return location.geometry.coordinates[0].map(point => `${x(point[0])},${y(point[1])}`).join(" "); }
+function renderFallback() {
+  const values = coordinates(), width = 900, height = 520, padding = 45, longitudes = values.map(point => point[0]), latitudes = values.map(point => point[1]), minLon = Math.min(...longitudes), maxLon = Math.max(...longitudes), minLat = Math.min(...latitudes), maxLat = Math.max(...latitudes);
+  const x = value => padding + ((value - minLon) / (maxLon - minLon || 1)) * (width - 2 * padding), y = value => height - (padding + ((value - minLat) / (maxLat - minLat || 1)) * (height - 2 * padding));
+  const observed = track.features.filter(feature => feature.geometry.type === "Point"), observedPath = observed.map(point => `${x(point.geometry.coordinates[0])},${y(point.geometry.coordinates[1])}`).join(" "), forecastPath = [observed.at(-1).geometry.coordinates, ...forecasts.map(point => [point.longitude, point.latitude])].map(point => `${x(point[0])},${y(point[1])}`).join(" ");
+  const context = locations.features.flatMap(location => [...activeLayers].map(layerId => `<polygon points="${polygon(location, x, y)}" fill="${layerColors[layerId]}" fill-opacity="0.12" stroke="${layerColors[layerId]}"/>`)).join(""), heatmap = showRisk ? locations.features.map(location => { const score = riskFor(location.properties.location_id).properties; return `<polygon data-location="${location.properties.location_id}" points="${polygon(location, x, y)}" fill="${bandColors[score.band]}" fill-opacity="0.38" stroke="${bandColors[score.band]}" stroke-width="3"><title>${location.properties.name}: ${score.risk_score}/100 (${score.band})</title></polygon>`; }).join("") : "";
+  mapElement.innerHTML = `<svg viewBox="0 0 ${width} ${height}" width="100%" height="100%"><rect width="100%" height="100%" fill="#edf5fb"/>${context}${heatmap}<polyline points="${observedPath}" fill="none" stroke="#b62727" stroke-width="4"/><polyline points="${forecastPath}" fill="none" stroke="#7e22ce" stroke-width="3" stroke-dasharray="10 6"/>${observed.map(point => `<circle cx="${x(point.geometry.coordinates[0])}" cy="${y(point.geometry.coordinates[1])}" r="6" fill="#b62727"/>`).join("")}${forecasts.map(point => `<circle cx="${x(point.longitude)}" cy="${y(point.latitude)}" r="6" fill="#7e22ce"/>`).join("")}<text x="20" y="30" fill="#48576a">Red solid: observed. Purple dashed: forecast. Offline coordinate-map fallback.</text></svg>`;
   mapElement.querySelectorAll("[data-location]").forEach(element => element.addEventListener("click", () => showRiskDetail(element.dataset.location)));
 }
-
-function googleMap() {
-  const points = currentTrack.features.filter(feature => feature.geometry.type === "Point"), coordinates = points.map(point => ({ lng: point.geometry.coordinates[0], lat: point.geometry.coordinates[1] }));
-  const map = new google.maps.Map(mapElement, { center: coordinates[Math.floor(coordinates.length / 2)], zoom: 5, mapTypeControl: false });
-  new google.maps.Polyline({ path: coordinates, map, strokeColor: "#b62727", strokeWeight: 4 });
-  coordinates.forEach((position, index) => new google.maps.Marker({ position, map, title: points[index].properties.timestamp }));
-  currentLocations.features.forEach(location => {
-    const risk = riskFor(location.properties.location_id), paths = location.geometry.coordinates[0].map(([lng, lat]) => ({ lng, lat }));
-    [...activeLayers].forEach(layerId => new google.maps.Polygon({ paths, map, fillColor: layerColor(layerId), fillOpacity: 0.12, strokeColor: layerColor(layerId), strokeWeight: 1 }));
-    if (showRisk) { const polygon = new google.maps.Polygon({ paths, map, fillColor: bandColors[risk.properties.band], fillOpacity: 0.38, strokeColor: bandColors[risk.properties.band], strokeWeight: 3 }); polygon.addListener("click", () => showRiskDetail(location.properties.location_id)); }
-  });
+function renderGoogleMap() {
+  const observed = track.features.filter(feature => feature.geometry.type === "Point").map(feature => ({ lng: feature.geometry.coordinates[0], lat: feature.geometry.coordinates[1] })), forecastPath = [...observed.slice(-1), ...forecasts.map(point => ({ lng: point.longitude, lat: point.latitude }))], map = new google.maps.Map(mapElement, { center: observed.at(-1), zoom: 5, mapTypeControl: false });
+  new google.maps.Polyline({ path: observed, map, strokeColor: "#b62727", strokeWeight: 4 }); new google.maps.Polyline({ path: forecastPath, map, strokeColor: "#7e22ce", strokeWeight: 3, icons: [{ icon: { path: "M 0,-1 0,1", strokeOpacity: 1, scale: 4 }, offset: "0", repeat: "20px" }] });
+  locations.features.forEach(location => { const score = riskFor(location.properties.location_id).properties, paths = location.geometry.coordinates[0].map(([lng, lat]) => ({ lng, lat })); [...activeLayers].forEach(layerId => new google.maps.Polygon({ paths, map, fillColor: layerColors[layerId], fillOpacity: .12, strokeColor: layerColors[layerId] })); if (showRisk) { const shape = new google.maps.Polygon({ paths, map, fillColor: bandColors[score.band], fillOpacity: .38, strokeColor: bandColors[score.band], strokeWeight: 3 }); shape.addListener("click", () => showRiskDetail(location.properties.location_id)); } });
 }
-
-function renderMap() { window.google?.maps ? googleMap() : coordinateFallback(); }
-function checkbox(labelText, checked, change) { const label = document.createElement("label"), input = document.createElement("input"); input.type = "checkbox"; input.checked = checked; input.addEventListener("change", () => change(input.checked)); label.append(input, ` ${labelText}`); return label; }
-function renderControls(layers) {
-  controls.replaceChildren();
-  controls.append(checkbox("Baseline risk heatmap", true, checked => { showRisk = checked; renderMap(); }));
-  layers.forEach(layer => { activeLayers.add(layer.layer_id); controls.append(checkbox(`${layer.name} (${layer.unit})`, true, checked => { checked ? activeLayers.add(layer.layer_id) : activeLayers.delete(layer.layer_id); renderMap(); })); const detail = document.createElement("div"); detail.className = "metadata"; detail.textContent = `${layer.source}; ${layer.observed_at}; ${layer.resolution}`; controls.append(detail); });
-}
-
-async function showRiskDetail(locationId) {
-  const response = await fetch(`/locations/${encodeURIComponent(locationId)}/risk?cyclone_id=${encodeURIComponent(selector.value)}`), risk = await response.json();
-  if (!response.ok) { riskDetail.textContent = risk.error; return; }
-  riskDetail.replaceChildren(); const title = document.createElement("strong"), note = document.createElement("p"), list = document.createElement("ul");
-  title.textContent = `Risk score: ${risk.risk_score}/100`; note.innerHTML = `<span class="band">${risk.band}</span> baseline risk; model ${risk.model_version}; valid ${risk.valid_time}.`;
-  risk.feature_contributions.forEach(contribution => { const item = document.createElement("li"); item.textContent = `${contribution.name}: ${contribution.raw_value}; normalised ${contribution.normalised_value}; weight ${contribution.weight}; ${contribution.score_points} score points`; list.append(item); });
-  riskDetail.append(title, note, list);
-}
-
-async function selectCyclone() {
-  const event = JSON.parse(selector.selectedOptions[0].dataset.event); metadata.textContent = `${event.name} | ${event.basin} | source: ${event.source} | data timestamp: ${event.observed_at}`;
-  [currentTrack, currentLocations, currentRisk] = await Promise.all([fetch(`/cyclones/${encodeURIComponent(event.cyclone_id)}/track`).then(response => response.json()), fetch(`/cyclones/${encodeURIComponent(event.cyclone_id)}/locations`).then(response => response.json()), fetch(`/cyclones/${encodeURIComponent(event.cyclone_id)}/risk`).then(response => response.json())]);
-  const layers = await fetch(`/cyclones/${encodeURIComponent(event.cyclone_id)}/layers`).then(response => response.json()); activeLayers = new Set(); showRisk = true; renderControls(layers); renderMap();
-}
-
-async function start() {
-  const mapConfig = await fetch("/map-config").then(response => response.json());
-  if (mapConfig.google_maps_api_key) await new Promise((resolve, reject) => { const script = document.createElement("script"); script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(mapConfig.google_maps_api_key)}`; script.onload = resolve; script.onerror = reject; document.head.append(script); });
-  const cyclones = await fetch("/cyclones").then(response => response.json()); cyclones.forEach(event => { const option = new Option(event.name, event.cyclone_id); option.dataset.event = JSON.stringify(event); selector.add(option); }); selector.addEventListener("change", selectCyclone); await selectCyclone();
-}
-start().catch(error => { mapElement.textContent = `Unable to load cyclone risk data: ${error.message}`; });
+function renderMap() { window.google?.maps ? renderGoogleMap() : renderFallback(); }
+function addControl(text, checked, onChange) { const label = document.createElement("label"), input = document.createElement("input"); input.type = "checkbox"; input.checked = checked; input.addEventListener("change", () => onChange(input.checked)); label.append(input, ` ${text}`); controls.append(label); }
+function renderControls(layers) { controls.replaceChildren(); addControl("Baseline risk heatmap", showRisk, checked => { showRisk = checked; renderMap(); }); layers.forEach(layer => { activeLayers.add(layer.layer_id); addControl(`${layer.name} (${layer.unit})`, true, checked => { checked ? activeLayers.add(layer.layer_id) : activeLayers.delete(layer.layer_id); renderMap(); }); const detail = document.createElement("div"); detail.className = "metadata"; detail.textContent = `${layer.source}; ${layer.observed_at}; ${layer.resolution}`; controls.append(detail); }); }
+async function loadRisk() { const validTime = timeSelector.value; risk = await fetch(`/cyclones/${encodeURIComponent(selector.value)}/risk?valid_time=${encodeURIComponent(validTime)}`).then(response => response.json()); renderMap(); }
+async function showRiskDetail(locationId) { const score = await fetch(`/locations/${encodeURIComponent(locationId)}/risk?cyclone_id=${encodeURIComponent(selector.value)}&valid_time=${encodeURIComponent(timeSelector.value)}`).then(response => response.json()); riskDetail.replaceChildren(); const title = document.createElement("strong"), note = document.createElement("p"), list = document.createElement("ul"); title.textContent = `Risk score: ${score.risk_score}/100`; note.innerHTML = `<span class="band">${score.band}</span> ${score.source_type}; model ${score.model_version}; valid ${score.valid_time}.`; score.feature_contributions.forEach(item => { const row = document.createElement("li"); row.textContent = `${item.name}: ${item.raw_value}; normalised ${item.normalised_value}; weight ${item.weight}; ${item.score_points} score points`; list.append(row); }); riskDetail.append(title, note, list); }
+function populateTimes() { timeSelector.replaceChildren(); const observedTime = track.features.filter(feature => feature.geometry.type === "Point").at(-1).properties.timestamp; const options = [{ value: observedTime, label: `Observed ${observedTime}` }, ...forecasts.map(point => ({ value: point.valid_time, label: `Forecast +${point.horizon_hours}h (${point.valid_time}; ±${point.uncertainty_km} km)` }))]; options.forEach(({ value, label }) => timeSelector.add(new Option(label, value))); }
+async function selectCyclone() { const event = JSON.parse(selector.selectedOptions[0].dataset.event); [track, locations, forecasts] = await Promise.all([fetch(`/cyclones/${encodeURIComponent(event.cyclone_id)}/track`).then(response => response.json()), fetch(`/cyclones/${encodeURIComponent(event.cyclone_id)}/locations`).then(response => response.json()), fetch(`/cyclones/${encodeURIComponent(event.cyclone_id)}/forecast`).then(response => response.json()).then(payload => payload.points)]); metadata.textContent = `${event.name} | ${event.basin} | observed source: ${event.source} | ${event.observed_at}`; populateTimes(); activeLayers = new Set(); showRisk = true; renderControls(await fetch(`/cyclones/${encodeURIComponent(event.cyclone_id)}/layers`).then(response => response.json())); await loadRisk(); }
+async function start() { const config = await fetch("/map-config").then(response => response.json()); if (config.google_maps_api_key) await new Promise((resolve, reject) => { const script = document.createElement("script"); script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(config.google_maps_api_key)}`; script.onload = resolve; script.onerror = reject; document.head.append(script); }); const cyclones = await fetch("/cyclones").then(response => response.json()); cyclones.forEach(event => { const option = new Option(event.name, event.cyclone_id); option.dataset.event = JSON.stringify(event); selector.add(option); }); selector.addEventListener("change", selectCyclone); timeSelector.addEventListener("change", loadRisk); await selectCyclone(); }
+start().catch(error => { mapElement.textContent = `Unable to load cyclone forecast data: ${error.message}`; });

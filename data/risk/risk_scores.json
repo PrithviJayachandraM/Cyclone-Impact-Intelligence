@@ -8,6 +8,8 @@
       "risk_score": 85,
       "band": "high",
       "model_version": "phase3-baseline-1",
+      "source_type": "observed",
+      "forecast_created_at": null,
       "feature_contributions": [
         {
           "feature_id": "wind",
@@ -58,6 +60,8 @@
       "risk_score": 66,
       "band": "medium",
       "model_version": "phase3-baseline-1",
+      "source_type": "observed",
+      "forecast_created_at": null,
       "feature_contributions": [
         {
           "feature_id": "wind",
@@ -82,6 +86,318 @@
           "normalised_value": 0.8221,
           "weight": 0.25,
           "score_points": 20.55
+        },
+        {
+          "feature_id": "flood_susceptibility",
+          "name": "Low-elevation flood susceptibility",
+          "raw_value": 42.0,
+          "normalised_value": 0.58,
+          "weight": 0.15,
+          "score_points": 8.7
+        },
+        {
+          "feature_id": "population",
+          "name": "Population exposure",
+          "raw_value": 51000.0,
+          "normalised_value": 0.51,
+          "weight": 0.15,
+          "score_points": 7.65
+        }
+      ]
+    },
+    {
+      "cyclone_id": "phailin-2013",
+      "location_id": "phailin-grid-01",
+      "valid_time": "2013-10-13T06:00:00Z",
+      "risk_score": 50,
+      "band": "medium",
+      "model_version": "phase3-baseline-1",
+      "source_type": "forecast",
+      "forecast_created_at": "2013-10-13T00:00:00Z",
+      "feature_contributions": [
+        {
+          "feature_id": "wind",
+          "name": "Maximum observed wind",
+          "raw_value": 89.7,
+          "normalised_value": 0.3588,
+          "weight": 0.2,
+          "score_points": 7.18
+        },
+        {
+          "feature_id": "rainfall",
+          "name": "Accumulated rainfall",
+          "raw_value": 220.0,
+          "normalised_value": 0.7333,
+          "weight": 0.25,
+          "score_points": 18.33
+        },
+        {
+          "feature_id": "proximity",
+          "name": "Track proximity",
+          "raw_value": 291.62,
+          "normalised_value": 0.0,
+          "weight": 0.25,
+          "score_points": 0.0
+        },
+        {
+          "feature_id": "flood_susceptibility",
+          "name": "Low-elevation flood susceptibility",
+          "raw_value": 18.0,
+          "normalised_value": 0.82,
+          "weight": 0.15,
+          "score_points": 12.3
+        },
+        {
+          "feature_id": "population",
+          "name": "Population exposure",
+          "raw_value": 84000.0,
+          "normalised_value": 0.84,
+          "weight": 0.15,
+          "score_points": 12.6
+        }
+      ]
+    },
+    {
+      "cyclone_id": "phailin-2013",
+      "location_id": "phailin-grid-02",
+      "valid_time": "2013-10-13T06:00:00Z",
+      "risk_score": 45,
+      "band": "medium",
+      "model_version": "phase3-baseline-1",
+      "source_type": "forecast",
+      "forecast_created_at": "2013-10-13T00:00:00Z",
+      "feature_contributions": [
+        {
+          "feature_id": "wind",
+          "name": "Maximum observed wind",
+          "raw_value": 89.7,
+          "normalised_value": 0.3588,
+          "weight": 0.2,
+          "score_points": 7.18
+        },
+        {
+          "feature_id": "rainfall",
+          "name": "Accumulated rainfall",
+          "raw_value": 145.0,
+          "normalised_value": 0.4833,
+          "weight": 0.25,
+          "score_points": 12.08
+        },
+        {
+          "feature_id": "proximity",
+          "name": "Track proximity",
+          "raw_value": 155.99,
+          "normalised_value": 0.376,
+          "weight": 0.25,
+          "score_points": 9.4
+        },
+        {
+          "feature_id": "flood_susceptibility",
+          "name": "Low-elevation flood susceptibility",
+          "raw_value": 42.0,
+          "normalised_value": 0.58,
+          "weight": 0.15,
+          "score_points": 8.7
+        },
+        {
+          "feature_id": "population",
+          "name": "Population exposure",
+          "raw_value": 51000.0,
+          "normalised_value": 0.51,
+          "weight": 0.15,
+          "score_points": 7.65
+        }
+      ]
+    },
+    {
+      "cyclone_id": "phailin-2013",
+      "location_id": "phailin-grid-01",
+      "valid_time": "2013-10-13T12:00:00Z",
+      "risk_score": 46,
+      "band": "medium",
+      "model_version": "phase3-baseline-1",
+      "source_type": "forecast",
+      "forecast_created_at": "2013-10-13T00:00:00Z",
+      "feature_contributions": [
+        {
+          "feature_id": "wind",
+          "name": "Maximum observed wind",
+          "raw_value": 40.3,
+          "normalised_value": 0.1612,
+          "weight": 0.2,
+          "score_points": 3.22
+        },
+        {
+          "feature_id": "rainfall",
+          "name": "Accumulated rainfall",
+          "raw_value": 220.0,
+          "normalised_value": 0.7333,
+          "weight": 0.25,
+          "score_points": 18.33
+        },
+        {
+          "feature_id": "proximity",
+          "name": "Track proximity",
+          "raw_value": 406.03,
+          "normalised_value": 0.0,
+          "weight": 0.25,
+          "score_points": 0.0
+        },
+        {
+          "feature_id": "flood_susceptibility",
+          "name": "Low-elevation flood susceptibility",
+          "raw_value": 18.0,
+          "normalised_value": 0.82,
+          "weight": 0.15,
+          "score_points": 12.3
+        },
+        {
+          "feature_id": "population",
+          "name": "Population exposure",
+          "raw_value": 84000.0,
+          "normalised_value": 0.84,
+          "weight": 0.15,
+          "score_points": 12.6
+        }
+      ]
+    },
+    {
+      "cyclone_id": "phailin-2013",
+      "location_id": "phailin-grid-02",
+      "valid_time": "2013-10-13T12:00:00Z",
+      "risk_score": 32,
+      "band": "low",
+      "model_version": "phase3-baseline-1",
+      "source_type": "forecast",
+      "forecast_created_at": "2013-10-13T00:00:00Z",
+      "feature_contributions": [
+        {
+          "feature_id": "wind",
+          "name": "Maximum observed wind",
+          "raw_value": 40.3,
+          "normalised_value": 0.1612,
+          "weight": 0.2,
+          "score_points": 3.22
+        },
+        {
+          "feature_id": "rainfall",
+          "name": "Accumulated rainfall",
+          "raw_value": 145.0,
+          "normalised_value": 0.4833,
+          "weight": 0.25,
+          "score_points": 12.08
+        },
+        {
+          "feature_id": "proximity",
+          "name": "Track proximity",
+          "raw_value": 269.97,
+          "normalised_value": 0.0,
+          "weight": 0.25,
+          "score_points": 0.0
+        },
+        {
+          "feature_id": "flood_susceptibility",
+          "name": "Low-elevation flood susceptibility",
+          "raw_value": 42.0,
+          "normalised_value": 0.58,
+          "weight": 0.15,
+          "score_points": 8.7
+        },
+        {
+          "feature_id": "population",
+          "name": "Population exposure",
+          "raw_value": 51000.0,
+          "normalised_value": 0.51,
+          "weight": 0.15,
+          "score_points": 7.65
+        }
+      ]
+    },
+    {
+      "cyclone_id": "phailin-2013",
+      "location_id": "phailin-grid-01",
+      "valid_time": "2013-10-13T18:00:00Z",
+      "risk_score": 43,
+      "band": "medium",
+      "model_version": "phase3-baseline-1",
+      "source_type": "forecast",
+      "forecast_created_at": "2013-10-13T00:00:00Z",
+      "feature_contributions": [
+        {
+          "feature_id": "wind",
+          "name": "Maximum observed wind",
+          "raw_value": 0.0,
+          "normalised_value": 0.0,
+          "weight": 0.2,
+          "score_points": 0.0
+        },
+        {
+          "feature_id": "rainfall",
+          "name": "Accumulated rainfall",
+          "raw_value": 220.0,
+          "normalised_value": 0.7333,
+          "weight": 0.25,
+          "score_points": 18.33
+        },
+        {
+          "feature_id": "proximity",
+          "name": "Track proximity",
+          "raw_value": 520.3,
+          "normalised_value": 0.0,
+          "weight": 0.25,
+          "score_points": 0.0
+        },
+        {
+          "feature_id": "flood_susceptibility",
+          "name": "Low-elevation flood susceptibility",
+          "raw_value": 18.0,
+          "normalised_value": 0.82,
+          "weight": 0.15,
+          "score_points": 12.3
+        },
+        {
+          "feature_id": "population",
+          "name": "Population exposure",
+          "raw_value": 84000.0,
+          "normalised_value": 0.84,
+          "weight": 0.15,
+          "score_points": 12.6
+        }
+      ]
+    },
+    {
+      "cyclone_id": "phailin-2013",
+      "location_id": "phailin-grid-02",
+      "valid_time": "2013-10-13T18:00:00Z",
+      "risk_score": 28,
+      "band": "low",
+      "model_version": "phase3-baseline-1",
+      "source_type": "forecast",
+      "forecast_created_at": "2013-10-13T00:00:00Z",
+      "feature_contributions": [
+        {
+          "feature_id": "wind",
+          "name": "Maximum observed wind",
+          "raw_value": 0.0,
+          "normalised_value": 0.0,
+          "weight": 0.2,
+          "score_points": 0.0
+        },
+        {
+          "feature_id": "rainfall",
+          "name": "Accumulated rainfall",
+          "raw_value": 145.0,
+          "normalised_value": 0.4833,
+          "weight": 0.25,
+          "score_points": 12.08
+        },
+        {
+          "feature_id": "proximity",
+          "name": "Track proximity",
+          "raw_value": 384.09,
+          "normalised_value": 0.0,
+          "weight": 0.25,
+          "score_points": 0.0
         },
         {
           "feature_id": "flood_susceptibility",

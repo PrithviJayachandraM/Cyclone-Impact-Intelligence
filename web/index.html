@@ -1,27 +1,17 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Cyclone historical track map</title>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Cyclone forecast and risk map</title>
     <style>
-      body { font-family: system-ui, sans-serif; margin: 0; color: #172033; }
-      header, main { max-width: 980px; margin: auto; padding: 1rem; } header { border-bottom: 1px solid #d9e1ec; }
-      h1 { margin: 0; font-size: 1.5rem; } h2 { font-size: 1.1rem; margin-top: 1.5rem; }
-      #map { height: 520px; background: #edf5fb; border: 1px solid #b9cbe0; } #metadata, #risk-detail { margin: 1rem 0; }
-      #layer-controls label { display: inline-block; margin: 0 .8rem .5rem 0; } select { padding: .45rem; }
-      .notice, .metadata { color: #48576a; font-size: .9rem; } #risk-detail { border-left: 3px solid #b9cbe0; padding-left: .75rem; }
-      ul { padding-left: 1.2rem; } .band { text-transform: uppercase; font-weight: 700; }
+      body { font-family: system-ui, sans-serif; margin: 0; color: #172033; } header, main { max-width: 980px; margin: auto; padding: 1rem; } header { border-bottom: 1px solid #d9e1ec; } h1 { margin: 0; font-size: 1.5rem; } h2 { font-size: 1.1rem; margin-top: 1.5rem; } #map { height: 520px; background: #edf5fb; border: 1px solid #b9cbe0; } #metadata, #risk-detail { margin: 1rem 0; } #layer-controls label { display: inline-block; margin: 0 .8rem .5rem 0; } select { padding: .45rem; margin-right: .8rem; } .notice, .metadata { color: #48576a; font-size: .9rem; } #risk-detail { border-left: 3px solid #b9cbe0; padding-left: .75rem; } ul { padding-left: 1.2rem; } .band { text-transform: uppercase; font-weight: 700; }
     </style>
   </head>
   <body>
-    <header><h1>Historical cyclone tracks</h1><p class="notice">Decision-support prototype. Risk is an uncalibrated explainable baseline, not an official warning or evacuation authority.</p></header>
+    <header><h1>Historical cyclone tracks and forecast risk</h1><p class="notice">Decision-support prototype. Forecasts and risk are uncalibrated baselines, not official warnings or evacuation instructions.</p></header>
     <main>
-      <label for="cyclone">Cyclone</label> <select id="cyclone"></select><p id="metadata"></p>
-      <section aria-labelledby="layers-heading"><h2 id="layers-heading">Contextual and risk layers</h2><div id="layer-controls"></div></section>
-      <div id="map" aria-label="Cyclone track, contextual layers, and risk heatmap"></div>
-      <section aria-labelledby="risk-heading"><h2 id="risk-heading">Selected location risk</h2><div id="risk-detail">Select a grid on the map to view its score and contributions.</div></section>
-    </main>
-    <script src="/app.js"></script>
+      <label for="cyclone">Cyclone</label> <select id="cyclone"></select><label for="risk-time">Track/risk time</label> <select id="risk-time"></select><p id="metadata"></p>
+      <section><h2>Contextual and risk layers</h2><div id="layer-controls"></div></section><div id="map" aria-label="Observed cyclone track, forecast track, and risk heatmap"></div>
+      <section><h2>Selected location risk</h2><div id="risk-detail">Select a grid to view its score and contributions.</div></section>
+    </main><script src="/app.js"></script>
   </body>
 </html>

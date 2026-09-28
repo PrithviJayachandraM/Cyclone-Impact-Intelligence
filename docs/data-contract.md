@@ -6,7 +6,7 @@ This document defines the canonical names and minimum fields from the Technical 
 | --- | --- | --- |
 | CycloneEvent | `cyclone_id`, `name`, `basin`, `source`, `observed_at` | Implemented |
 | CycloneTrackPoint | `cyclone_id`, `timestamp`, `latitude`, `longitude`, `wind_speed_kph`, `pressure_hpa`, `source_type` | Implemented |
-| ForecastPoint | `cyclone_id`, `forecast_created_at`, `valid_time`, `latitude`, `longitude`, `intensity`, `uncertainty` | Future phase |
+| ForecastPoint | `cyclone_id`, `forecast_created_at`, `valid_time`, `latitude`, `longitude`, `intensity_kph`, `uncertainty_km` | Implemented in Phase 4 |
 | WeatherObservation | `location_id`, `timestamp`, `rainfall`, `wind`, `pressure`, `temperature`, `source` | Phase 2 |
 | Location | `location_id`, `geometry`, `administrative_level`, `name` | GIS DDL only |
 | Exposure | `location_id`, `population`, `roads`, `buildings`, `critical_assets` | Phase 2 |

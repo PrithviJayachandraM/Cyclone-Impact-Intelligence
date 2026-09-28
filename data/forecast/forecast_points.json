@@ -1,0 +1,72 @@
+{
+  "model_version": "phase4-constant-velocity-1",
+  "points": [
+    {
+      "cyclone_id": "phailin-2013",
+      "forecast_created_at": "2013-10-13T00:00:00Z",
+      "valid_time": "2013-10-13T06:00:00Z",
+      "horizon_hours": 6,
+      "latitude": 21.4333,
+      "longitude": 84.0333,
+      "intensity_kph": 89.7,
+      "wind_speed_kph": 89.7,
+      "uncertainty_km": 60.0,
+      "source_type": "forecast",
+      "model_version": "phase4-constant-velocity-1"
+    },
+    {
+      "cyclone_id": "phailin-2013",
+      "forecast_created_at": "2013-10-13T00:00:00Z",
+      "valid_time": "2013-10-13T12:00:00Z",
+      "horizon_hours": 12,
+      "latitude": 22.3667,
+      "longitude": 83.5667,
+      "intensity_kph": 40.3,
+      "wind_speed_kph": 40.3,
+      "uncertainty_km": 120.0,
+      "source_type": "forecast",
+      "model_version": "phase4-constant-velocity-1"
+    },
+    {
+      "cyclone_id": "phailin-2013",
+      "forecast_created_at": "2013-10-13T00:00:00Z",
+      "valid_time": "2013-10-13T18:00:00Z",
+      "horizon_hours": 18,
+      "latitude": 23.3,
+      "longitude": 83.1,
+      "intensity_kph": 0,
+      "wind_speed_kph": 0,
+      "uncertainty_km": 180.0,
+      "source_type": "forecast",
+      "model_version": "phase4-constant-velocity-1"
+    }
+  ],
+  "evaluation": {
+    "model_version": "phase4-constant-velocity-1",
+    "splits": {
+      "train": {
+        "start": "2013-10-08T03:00:00Z",
+        "end": "2013-10-10T06:00:00Z",
+        "count": 3
+      },
+      "validation": {
+        "start": "2013-10-11T12:00:00Z",
+        "end": "2013-10-11T12:00:00Z",
+        "count": 1
+      },
+      "test": {
+        "start": "2013-10-12T15:00:00Z",
+        "end": "2013-10-13T00:00:00Z",
+        "count": 2
+      }
+    },
+    "validation": {
+      "mean_track_error_km": 30.78,
+      "mean_wind_mae_kph": 29.0
+    },
+    "test": {
+      "mean_track_error_km": 73.71,
+      "mean_wind_mae_kph": 78.85
+    }
+  }
+}
