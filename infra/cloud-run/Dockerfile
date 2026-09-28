@@ -4,6 +4,7 @@ WORKDIR /app
 COPY src /app/src
 COPY web /app/web
 COPY data/normalized /app/data/normalized
+COPY data/enriched /app/data/enriched
 ENV PYTHONPATH=/app/src
 ENV PORT=8080
 EXPOSE 8080

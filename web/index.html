@@ -8,17 +8,21 @@
       body { font-family: system-ui, sans-serif; margin: 0; color: #172033; }
       header, main { max-width: 980px; margin: auto; padding: 1rem; }
       header { border-bottom: 1px solid #d9e1ec; }
-      h1 { margin: 0; font-size: 1.5rem; }
+      h1 { margin: 0; font-size: 1.5rem; } h2 { font-size: 1.1rem; margin-top: 1.5rem; }
       #map { height: 520px; background: #edf5fb; border: 1px solid #b9cbe0; }
-      #metadata { margin: 1rem 0; } select { padding: .45rem; }
-      .notice { color: #48576a; font-size: .9rem; }
+      #metadata, #feature-vector { margin: 1rem 0; } #layer-controls label { display: inline-block; margin: 0 .8rem .5rem 0; }
+      select { padding: .45rem; } .notice, .metadata { color: #48576a; font-size: .9rem; }
+      #feature-vector { border-left: 3px solid #b9cbe0; padding-left: .75rem; } ul { padding-left: 1.2rem; }
     </style>
   </head>
   <body>
     <header><h1>Historical cyclone tracks</h1><p class="notice">Decision-support prototype. Official IMD information remains authoritative.</p></header>
     <main>
       <label for="cyclone">Cyclone</label> <select id="cyclone"></select>
-      <p id="metadata"></p><div id="map" aria-label="Cyclone track map"></div>
+      <p id="metadata"></p>
+      <section aria-labelledby="layers-heading"><h2 id="layers-heading">Contextual layers</h2><div id="layer-controls"></div></section>
+      <div id="map" aria-label="Cyclone track and contextual layer map"></div>
+      <section aria-labelledby="feature-heading"><h2 id="feature-heading">Selected location feature vector</h2><div id="feature-vector">Select a grid on the map to view its persisted features.</div></section>
     </main>
     <script src="/app.js"></script>
   </body>

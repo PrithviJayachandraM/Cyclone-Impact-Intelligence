@@ -1,0 +1,57 @@
+{
+  "layers": [
+    {
+      "layer_id": "rainfall",
+      "name": "Accumulated rainfall",
+      "unit": "mm",
+      "source": "Local deterministic Phase 2 fixture; not an operational observation",
+      "observed_at": "2013-10-12T15:00:00Z",
+      "resolution": "0.25 degree demo grid",
+      "processing_version": "phase2-local-1"
+    },
+    {
+      "layer_id": "elevation",
+      "name": "Elevation",
+      "unit": "m",
+      "source": "Local deterministic Phase 2 fixture; not an operational observation",
+      "observed_at": "2013-10-12T15:00:00Z",
+      "resolution": "0.25 degree demo grid",
+      "processing_version": "phase2-local-1"
+    },
+    {
+      "layer_id": "population",
+      "name": "Population exposure",
+      "unit": "people",
+      "source": "Local deterministic Phase 2 fixture; not an operational estimate",
+      "observed_at": "2013-10-12T15:00:00Z",
+      "resolution": "0.25 degree demo grid",
+      "processing_version": "phase2-local-1"
+    }
+  ],
+  "locations": [
+    {
+      "cyclone_id": "phailin-2013",
+      "location_id": "phailin-grid-01",
+      "name": "Coastal demonstration grid 01",
+      "administrative_level": "grid",
+      "geometry": {"type": "Polygon", "coordinates": [[[84.9, 18.8], [85.5, 18.8], [85.5, 19.3], [84.9, 19.3], [84.9, 18.8]]]},
+      "features": [
+        {"layer_id": "rainfall", "value": 220},
+        {"layer_id": "elevation", "value": 18},
+        {"layer_id": "population", "value": 84000}
+      ]
+    },
+    {
+      "cyclone_id": "phailin-2013",
+      "location_id": "phailin-grid-02",
+      "name": "Coastal demonstration grid 02",
+      "administrative_level": "grid",
+      "geometry": {"type": "Polygon", "coordinates": [[[84.2, 19.8], [84.8, 19.8], [84.8, 20.4], [84.2, 20.4], [84.2, 19.8]]]},
+      "features": [
+        {"layer_id": "rainfall", "value": 145},
+        {"layer_id": "elevation", "value": 42},
+        {"layer_id": "population", "value": 51000}
+      ]
+    }
+  ]
+}

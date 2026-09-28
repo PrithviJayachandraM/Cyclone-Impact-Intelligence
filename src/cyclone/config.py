@@ -12,6 +12,7 @@ class AppConfig:
     host: str
     port: int
     data_directory: Path
+    enrichment_data_directory: Path
     google_maps_api_key: str | None
 
     @classmethod
@@ -23,5 +24,6 @@ class AppConfig:
             host=os.getenv("APP_HOST", "127.0.0.1"),
             port=port,
             data_directory=Path(os.getenv("CYCLONE_DATA_PATH", "data/normalized")),
+            enrichment_data_directory=Path(os.getenv("ENRICHMENT_DATA_PATH", "data/enriched")),
             google_maps_api_key=os.getenv("GOOGLE_MAPS_API_KEY") or None,
         )

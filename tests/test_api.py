@@ -4,10 +4,11 @@ import json
 import threading
 import unittest
 from http.client import HTTPConnection
-from pathlib import Path
 from http.server import ThreadingHTTPServer
+from pathlib import Path
 
 from cyclone.api import create_handler
+from cyclone.enrichment import EnrichmentRepository
 from cyclone.repository import HistoricalTrackRepository
 
 
@@ -15,7 +16,14 @@ class ApiTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         data_path = Path(__file__).parents[1] / "data" / "normalized"
-        cls.server = ThreadingHTTPServer(("127.0.0.1", 0), create_handler(HistoricalTrackRepository(data_path)))
+        enrichment_path = Path(__file__).parents[1] / "data" / "enriched"
+        cls.server = ThreadingHTTPServer(
+            ("127.0.0.1", 0),
+            create_handler(
+                HistoricalTrackRepository(data_path),
+                enrichment_repository=EnrichmentRepository(enrichment_path),
+            ),
+        )
         cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
         cls.thread.start()
 
@@ -58,3 +66,16 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertIn("text/html", headers["Content-Type"])
         self.assertIn(b"Historical cyclone tracks", body)
+
+    def test_returns_phase_two_layers_and_location_feature_vector(self) -> None:
+        status, _, body = self.get("/cyclones/phailin-2013/layers")
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(body)[0]["layer_id"], "rainfall")
+
+        status, _, body = self.get("/cyclones/phailin-2013/locations")
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(body)["features"][0]["properties"]["location_id"], "phailin-grid-01")
+
+        status, _, body = self.get("/locations/phailin-grid-01/features?cyclone_id=phailin-2013")
+        self.assertEqual(status, 200)
+        self.assertEqual(len(json.loads(body)["features"]), 3)
