@@ -1,0 +1,14 @@
+{
+  "advisories": [
+    {
+      "advisory_id": "imd-rsmc-reference",
+      "cyclone_id": "phailin-2013",
+      "approved": true,
+      "topics": "official guidance advisory cyclone safety",
+      "source": "India Meteorological Department (IMD) / RSMC New Delhi",
+      "published_at": "2013-10-13T00:00:00Z",
+      "url": "https://rsmcnewdelhi.imd.gov.in/report.php?internal_menu=MzM",
+      "guidance": "Use current IMD bulletins and local government instructions as the authoritative source. This historical prototype does not issue official warnings or evacuation orders."
+    }
+  ]
+}

@@ -4,22 +4,23 @@ Cyclone Impact Intelligence is a decision-support prototype that joins historica
 
 ## Current implementation
 
-The repository implements Phases 0–4 only.
+The repository implements Phases 0–5 only.
 
 - Phase 1: sourced Phailin 2013 replay data, deterministic track normalization, read API, and map.
 - Phase 2: rainfall, elevation, and population feature vectors for demonstration grids with provenance and layer controls.
 - Phase 3: deterministic 0–100 baseline risk scores, bands, factor contributions, and clickable heatmap.
 - Phase 4: reproducible constant-velocity/intensity-drift forecasts at 6, 12, and 18 hours; forecast timestamps, horizons, uncertainty metadata, chronological backtest metrics, projected-risk calculation, and observed-versus-forecast map rendering. Details: [docs/phase4-forecast.md](docs/phase4-forecast.md).
+- Phase 5: grounded situation briefings and natural-language Q&A. The assistant uses narrow read-only backend tools for cyclone state, location risk, exposure, and curated approved advisory references. Every result returns structured context, provenance/timestamps, uncertainty, and a safety boundary.
 
-Gemini, natural-language Q&A, advisories, scenarios, alerts, route optimization, and all Phase 5+ functionality remain out of scope.
+Scenario comparison, operational alerts, evacuation/route advice, and all Phase 6+ functionality remain out of scope.
 
 ## Architecture and data flow
 
 `data/raw` is immutable replay input. Phase 1 normalizes it to `data/normalized`; Phase 2 supplies structured location features from `data/enriched`; Phase 4 generates forecast points and evaluation metrics in `data/forecast`; Phase 3's formula is applied to each forecast state and persists projected location scores in `data/risk`.
 
-The browser distinguishes observed tracks (solid red) from predicted paths (dashed purple). Selecting an observed or forecast time switches the heatmap to the matching valid time. Prediction, risk, and future Gemini explanation remain separate, as required by the technical design.
+The browser distinguishes observed tracks (solid red) from predicted paths (dashed purple). Selecting an observed or forecast time switches the heatmap to the matching valid time. The Phase 5 assistant sends that selected time to the backend, which retrieves structured evidence before creating a briefing. Forecast facts are labelled as forecasts and include uncertainty; observed facts remain distinct.
 
-In a cloud deployment, Cloud Storage holds raw data, BigQuery GIS stores structured features/forecast/risk outputs, and the existing Cloud Run service hosts this API and baseline inference. Local execution never contacts GCP, Earth Engine, Vertex AI, or Gemini.
+In a cloud deployment, Cloud Storage holds raw data, BigQuery GIS stores structured features/forecast/risk outputs, and Cloud Run hosts the API. Gemini is isolated behind the backend's narrow controlled tools: it has neither direct BigQuery access nor browser credentials. Local execution uses a deterministic grounded responder and never contacts GCP, Earth Engine, Vertex AI, or Gemini.
 
 ## Project layout
 
@@ -29,7 +30,8 @@ data/normalized/      Historical events and observed track points
 data/enriched/        Phase 2 contextual-feature fixture
 data/forecast/        Phase 4 forecast points and chronological evaluation
 data/risk/            Baseline and forecast-projected risk scores
-src/cyclone/          API, configuration, enrichment, forecast, and risk logic
+data/advisories/      Curated approved advisory references for Phase 5 retrieval
+src/cyclone/          API, configuration, intelligence, enrichment, forecast, and risk logic
 scripts/              Commands rebuilding derived local artifacts
 web/                  Observed/forecast map and risk UI
 infra/bigquery/       BigQuery schemas for Phases 1–4
@@ -47,13 +49,13 @@ python scripts/build_risk_scores.py data/normalized data/enriched data/forecast 
 python -m cyclone.main
 ```
 
-Open `http://127.0.0.1:8080`. The **Track/risk time** selector switches between the latest observed track state and 6/12/18-hour forecasts. The map renders observations as solid red and projections as dashed purple. Click a colored grid to inspect risk contributions for that selected time.
+Open `http://127.0.0.1:8080`. The **Track/risk time** selector switches between the latest observed track state and 6/12/18-hour forecasts. The map renders observations as solid red and projections as dashed purple. Click a colored grid to inspect risk contributions for that selected time. Use the **Grounded assistant** section to ask for a situation summary, why risk is high, highest exposure, or approved guidance.
 
 ## Configuration and cloud prerequisites
 
-`CYCLONE_DATA_PATH`, `ENRICHMENT_DATA_PATH`, `FORECAST_DATA_PATH`, and `RISK_DATA_PATH` choose local artifacts. `GOOGLE_MAPS_API_KEY` is optional and must be browser restricted. GCP variables in `.env.example` are identifiers, not credentials.
+`CYCLONE_DATA_PATH`, `ENRICHMENT_DATA_PATH`, `FORECAST_DATA_PATH`, `RISK_DATA_PATH`, and `ADVISORY_DATA_PATH` choose local artifacts. `GOOGLE_MAPS_API_KEY` is optional and must be browser restricted. The normal GCP variables in `.env.example` are identifiers, not credentials; `VERTEX_AI_ACCESS_TOKEN` is a deliberately blank runtime secret placeholder for the optional Vertex mode.
 
-Cloud table definitions are available in [phase4_schema.sql](infra/bigquery/phase4_schema.sql). A live production model would need approved data, a team-owned GCP project, service identity, and defensible evaluation. The included baseline runs behind the existing Cloud Run packaging and does not need Vertex AI.
+Cloud table definitions are available in [phase4_schema.sql](infra/bigquery/phase4_schema.sql). `GEMINI_PROVIDER=local` is the default and keeps development deterministic. To opt into Vertex, set `GEMINI_PROVIDER=vertex`, `GCP_PROJECT_ID`, `GCP_REGION`, `VERTEX_AI_MODEL`, and a runtime-only `VERTEX_AI_ACCESS_TOKEN`; never commit the token. Production should use a least-privilege service identity and Secret Manager to supply credentials. The API falls back to the local grounded response if Vertex is unavailable, preserving the evidence and safety boundary.
 
 ## API
 
@@ -67,8 +69,9 @@ Cloud table definitions are available in [phase4_schema.sql](infra/bigquery/phas
 - `GET /locations/{location_id}/risk?cyclone_id={cyclone_id}&valid_time={ISO-8601}`
 - `GET /cyclones/{cyclone_id}/forecast`
 - `GET /cyclones/{cyclone_id}/forecast/metrics`
+- `POST /query` with `question`, `cyclone_id`, and optional `valid_time`
 
-All endpoints remain read-only. There is no Gemini tool, advisory retrieval, scenario creation, or alerting.
+All endpoints remain read-only. `POST /query` supports situation summaries, risk explanations, exposure summaries, and curated advisory retrieval. It returns its selected tool, structured context, evidence citations, uncertainty, and safety notice. The service refuses to issue evacuation orders, alerts, routes, or other operational instructions.
 
 ## Testing
 
@@ -77,7 +80,7 @@ $env:PYTHONPATH = "src"
 python -m unittest discover -s tests -v
 ```
 
-Tests cover Phase 1–3 functionality plus reproducible forecast output, horizon and uncertainty metadata, chronological split ordering, baseline metric recording, insufficient-history rejection, forecast API contracts, and projected risk integration. They run without live cloud or AI services.
+Tests cover Phases 1–4 plus the Phase 5 tool selection, structured risk/exposure context, observed-versus-forecast labelling, advisory retrieval, safety refusal, API contract, and environment configuration. They run without live cloud or AI services.
 
 ## Security
 

@@ -10,6 +10,7 @@ from pathlib import Path
 from cyclone.api import create_handler
 from cyclone.enrichment import EnrichmentRepository
 from cyclone.forecast import ForecastRepository
+from cyclone.intelligence import AdvisoryRepository, GroundedAssistant
 from cyclone.repository import HistoricalTrackRepository
 from cyclone.risk import RiskRepository
 
@@ -20,7 +21,10 @@ class ApiTests(unittest.TestCase):
         root = Path(__file__).parents[1]
         tracks = HistoricalTrackRepository(root / "data" / "normalized")
         enrichment = EnrichmentRepository(root / "data" / "enriched")
-        cls.server = ThreadingHTTPServer(("127.0.0.1", 0), create_handler(tracks, enrichment_repository=enrichment, risk_repository=RiskRepository(root / "data" / "risk", enrichment.locations), forecast_repository=ForecastRepository(root / "data" / "forecast")))
+        risk = RiskRepository(root / "data" / "risk", enrichment.locations)
+        forecast = ForecastRepository(root / "data" / "forecast")
+        assistant = GroundedAssistant(tracks, enrichment, risk, forecast, AdvisoryRepository(root / "data" / "advisories"))
+        cls.server = ThreadingHTTPServer(("127.0.0.1", 0), create_handler(tracks, enrichment_repository=enrichment, risk_repository=risk, forecast_repository=forecast, assistant=assistant))
         cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
         cls.thread.start()
 
@@ -33,6 +37,12 @@ class ApiTests(unittest.TestCase):
         connection.request("GET", path)
         response = connection.getresponse(); body = response.read(); headers = dict(response.getheaders()); connection.close()
         return response.status, headers, body
+
+    def post(self, path: str, payload: dict[str, object]) -> tuple[int, bytes]:
+        connection = HTTPConnection("127.0.0.1", self.server.server_port)
+        connection.request("POST", path, body=json.dumps(payload), headers={"Content-Type": "application/json"})
+        response = connection.getresponse(); body = response.read(); status = response.status; connection.close()
+        return status, body
 
     def test_lists_cyclones(self) -> None:
         status, _, body = self.get("/cyclones")
@@ -72,3 +82,8 @@ class ApiTests(unittest.TestCase):
         valid_time = forecast["points"][0]["valid_time"]
         status, _, body = self.get(f"/cyclones/phailin-2013/risk?valid_time={valid_time}")
         self.assertEqual(status, 200); self.assertEqual(json.loads(body)["features"][0]["properties"]["source_type"], "forecast")
+
+    def test_returns_grounded_phase_five_answer(self) -> None:
+        status, body = self.post("/query", {"question": "Why is the risk high?", "cyclone_id": "phailin-2013", "valid_time": "2013-10-13T00:00:00Z"})
+        payload = json.loads(body)
+        self.assertEqual(status, 200); self.assertTrue(payload["supported"]); self.assertEqual(payload["tool"], "get_location_risk"); self.assertTrue(payload["evidence"])
