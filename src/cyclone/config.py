@@ -5,9 +5,10 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from pathlib import Path
+from cyclone.risk import *
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv()  # Load .env file if present
 
 @dataclass(frozen=True)
 class AppConfig:
@@ -24,6 +25,16 @@ class AppConfig:
     gcp_region: str
     vertex_ai_model: str
     vertex_ai_access_token: str | None
+    alert_risk_threshold: int
+    alert_stale_after_minutes: int
+    alert_event_transport: str
+    pubsub_topic: str | None
+    pubsub_access_token: str | None
+    notification_provider: str
+    firebase_project_id: str | None
+    firebase_notification_topic: str
+    firebase_access_token: str | None
+    log_level: str
 
     @classmethod
     def from_environment(cls) -> "AppConfig":
@@ -33,6 +44,21 @@ class AppConfig:
         gemini_provider = os.getenv("GEMINI_PROVIDER", "local").lower()
         if gemini_provider not in {"local", "vertex"}:
             raise ValueError("GEMINI_PROVIDER must be local or vertex")
+        alert_event_transport = os.getenv("ALERT_EVENT_TRANSPORT", "local").lower()
+        if alert_event_transport not in {"local", "pubsub"}:
+            raise ValueError("ALERT_EVENT_TRANSPORT must be local or pubsub")
+        notification_provider = os.getenv("NOTIFICATION_PROVIDER", "local").lower()
+        if notification_provider not in {"local", "firebase"}:
+            raise ValueError("NOTIFICATION_PROVIDER must be local or firebase")
+        alert_risk_threshold = int(os.getenv("ALERT_RISK_THRESHOLD", str(HIGH_RISK_THRESHOLD)))
+        if not 0 <= alert_risk_threshold <= 100:
+            raise ValueError("ALERT_RISK_THRESHOLD must be between 0 and 100")
+        alert_stale_after_minutes = int(os.getenv("ALERT_STALE_AFTER_MINUTES", "60"))
+        if alert_stale_after_minutes <= 0:
+            raise ValueError("ALERT_STALE_AFTER_MINUTES must be positive")
+        log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+        if log_level not in {"DEBUG", "INFO", "WARNING", "ERROR"}:
+            raise ValueError("LOG_LEVEL must be DEBUG, INFO, WARNING, or ERROR")
         return cls(
             host=os.getenv("APP_HOST", "127.0.0.1"), port=port,
             data_directory=Path(os.getenv("CYCLONE_DATA_PATH", "data/normalized")),
@@ -46,4 +72,14 @@ class AppConfig:
             gcp_region=os.getenv("GCP_REGION", "asia-south1"),
             vertex_ai_model=os.getenv("VERTEX_AI_MODEL", "gemini-2.5-flash"),
             vertex_ai_access_token=os.getenv("VERTEX_AI_ACCESS_TOKEN") or None,
+            alert_risk_threshold=alert_risk_threshold,
+            alert_stale_after_minutes=alert_stale_after_minutes,
+            alert_event_transport=alert_event_transport,
+            pubsub_topic=os.getenv("PUBSUB_TOPIC") or None,
+            pubsub_access_token=os.getenv("PUBSUB_ACCESS_TOKEN") or None,
+            notification_provider=notification_provider,
+            firebase_project_id=os.getenv("FIREBASE_PROJECT_ID") or None,
+            firebase_notification_topic=os.getenv("FIREBASE_NOTIFICATION_TOPIC", "cyclone-alerts"),
+            firebase_access_token=os.getenv("FIREBASE_ACCESS_TOKEN") or None,
+            log_level=log_level,
         )

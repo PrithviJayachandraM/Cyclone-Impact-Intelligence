@@ -8,6 +8,7 @@ from http.server import ThreadingHTTPServer
 from pathlib import Path
 
 from cyclone.api import create_handler
+from cyclone.alerts import AlertWorkflow, LocalEventPublisher, LocalNotificationSender
 from cyclone.enrichment import EnrichmentRepository
 from cyclone.forecast import ForecastRepository
 from cyclone.intelligence import AdvisoryRepository, GroundedAssistant
@@ -26,7 +27,9 @@ class ApiTests(unittest.TestCase):
         forecast = ForecastRepository(root / "data" / "forecast")
         assistant = GroundedAssistant(tracks, enrichment, risk, forecast, AdvisoryRepository(root / "data" / "advisories"))
         scenarios = ScenarioService(tracks, enrichment, risk, forecast)
-        cls.server = ThreadingHTTPServer(("127.0.0.1", 0), create_handler(tracks, enrichment_repository=enrichment, risk_repository=risk, forecast_repository=forecast, assistant=assistant, scenario_service=scenarios))
+        alerts = AlertWorkflow(risk, LocalNotificationSender(), threshold=67, stale_after_minutes=60)
+        publisher = LocalEventPublisher(alerts.process)
+        cls.server = ThreadingHTTPServer(("127.0.0.1", 0), create_handler(tracks, enrichment_repository=enrichment, risk_repository=risk, forecast_repository=forecast, assistant=assistant, scenario_service=scenarios, alert_workflow=alerts, event_publisher=publisher))
         cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
         cls.thread.start()
 
@@ -96,3 +99,13 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(status, 200); self.assertEqual(payload["scenario"]["status"], "simulation"); self.assertTrue(payload["explanation"]["simulation"])
         status, body = self.post("/scenario", {"cyclone_id": "phailin-2013", "parameters": {"intensity_multiplier": 3}})
         self.assertEqual(status, 400); self.assertIn("intensity_multiplier", json.loads(body)["error"])
+
+    def test_runs_local_phase_seven_alert_trigger_and_suppresses_duplicate(self) -> None:
+        request = {"event_id": "api-alert-1", "cyclone_id": "phailin-2013", "valid_time": "2013-10-13T00:00:00Z"}
+        status, body = self.post("/alerts/trigger", request)
+        payload = json.loads(body)
+        self.assertEqual(status, 200); self.assertEqual(payload["delivery"], "local"); self.assertEqual(payload["result"]["outcomes"][0]["status"], "alert_sent")
+        status, body = self.post("/alerts/trigger", request)
+        self.assertEqual(status, 200); self.assertEqual(json.loads(body)["result"]["outcomes"][0]["status"], "duplicate_suppressed")
+        status, _, body = self.get("/alerts/status")
+        self.assertEqual(status, 200); self.assertFalse(json.loads(body)["stale"])

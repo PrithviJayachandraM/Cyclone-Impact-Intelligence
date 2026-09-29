@@ -15,18 +15,21 @@ from cyclone.intelligence import GroundedAssistant
 from cyclone.repository import HistoricalTrackRepository
 from cyclone.risk import RiskRepository
 from cyclone.scenario import ScenarioService, ScenarioValidationError, ScenarioParameters
+from cyclone.alerts import AlertWorkflow, EventPublisher, EventValidationError, NotificationError, RiskEvaluationEvent
 
 
 STATIC_DIRECTORY = Path(__file__).parents[2] / "web"
 
 
-def create_handler(repository: HistoricalTrackRepository, google_maps_api_key: str | None = None, enrichment_repository: EnrichmentRepository | None = None, risk_repository: RiskRepository | None = None, forecast_repository: ForecastRepository | None = None, assistant: GroundedAssistant | None = None, scenario_service: ScenarioService | None = None) -> type[BaseHTTPRequestHandler]:
+def create_handler(repository: HistoricalTrackRepository, google_maps_api_key: str | None = None, enrichment_repository: EnrichmentRepository | None = None, risk_repository: RiskRepository | None = None, forecast_repository: ForecastRepository | None = None, assistant: GroundedAssistant | None = None, scenario_service: ScenarioService | None = None, alert_workflow: AlertWorkflow | None = None, event_publisher: EventPublisher | None = None) -> type[BaseHTTPRequestHandler]:
     class CycloneHandler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:  # noqa: N802
             request = urlparse(self.path)
             path, query = request.path, parse_qs(request.query)
             if path == "/health":
                 self.send_json(HTTPStatus.OK, {"status": "ok"})
+            elif path == "/alerts/status":
+                self.send_available(alert_workflow.status() if alert_workflow else None, "Alert workflow is not configured")
             elif path == "/cyclones":
                 self.send_json(HTTPStatus.OK, repository.list_events())
             elif path == "/map-config":
@@ -55,12 +58,16 @@ def create_handler(repository: HistoricalTrackRepository, google_maps_api_key: s
                 self.send_json(HTTPStatus.NOT_FOUND, {"error": "Not found"})
 
         def do_POST(self) -> None:  # noqa: N802
-            if self.path not in {"/query", "/scenario"}:
+            if self.path not in {"/query", "/scenario", "/alerts/trigger", "/events/pubsub"}:
                 self.send_json(HTTPStatus.NOT_FOUND, {"error": "Not found"}); return
             if self.path == "/query" and assistant is None:
                 self.send_json(HTTPStatus.SERVICE_UNAVAILABLE, {"error": "Grounded assistant is not configured"}); return
             if self.path == "/scenario" and (scenario_service is None or assistant is None):
                 self.send_json(HTTPStatus.SERVICE_UNAVAILABLE, {"error": "Scenario service is not configured"}); return
+            if self.path == "/alerts/trigger" and (alert_workflow is None or event_publisher is None):
+                self.send_json(HTTPStatus.SERVICE_UNAVAILABLE, {"error": "Alert workflow is not configured"}); return
+            if self.path == "/events/pubsub" and alert_workflow is None:
+                self.send_json(HTTPStatus.SERVICE_UNAVAILABLE, {"error": "Alert workflow is not configured"}); return
             try:
                 length = int(self.headers.get("Content-Length", "0"))
                 if length <= 0 or length > 4096:
@@ -70,14 +77,22 @@ def create_handler(repository: HistoricalTrackRepository, google_maps_api_key: s
                     result = scenario_service.simulate(str(payload.get("cyclone_id", "")), ScenarioParameters.from_payload(payload.get("parameters")), payload.get("valid_time"))
                     if result is not None:
                         result["explanation"] = assistant.explain_scenario(result)
+                elif self.path == "/alerts/trigger":
+                    result = event_publisher.publish(RiskEvaluationEvent.from_payload(payload, source="scheduler"))
+                elif self.path == "/events/pubsub":
+                    result = alert_workflow.handle_pubsub(payload)
+                    if any(item["status"] == "notification_failed" for item in result["outcomes"]):
+                        raise NotificationError("Alert notification delivery failed; the event may be retried")
                 else:
                     result = assistant.answer(str(payload.get("question", "")), str(payload.get("cyclone_id", "")), payload.get("valid_time"))
                 if result is None:
                     self.send_json(HTTPStatus.NOT_FOUND, {"error": "Cyclone not found"})
                 else:
                     self.send_json(HTTPStatus.OK, result)
-            except (UnicodeDecodeError, json.JSONDecodeError, ScenarioValidationError, ValueError) as error:
+            except (UnicodeDecodeError, json.JSONDecodeError, EventValidationError, ScenarioValidationError, ValueError) as error:
                 self.send_json(HTTPStatus.BAD_REQUEST, {"error": str(error)})
+            except NotificationError as error:
+                self.send_json(HTTPStatus.SERVICE_UNAVAILABLE, {"error": str(error)})
 
         @staticmethod
         def cyclone_id(path: str, suffix: str) -> str:

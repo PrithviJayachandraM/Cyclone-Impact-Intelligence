@@ -8,6 +8,7 @@ from pathlib import Path
 
 
 MODEL_VERSION = "phase3-baseline-1"
+HIGH_RISK_THRESHOLD = 67
 FEATURES = (
     ("wind", "Maximum observed wind", 0.20),
     ("rainfall", "Accumulated rainfall", 0.25),
@@ -34,7 +35,7 @@ def _centroid(location: dict[str, object]) -> tuple[float, float]:
 
 
 def _band(score: int) -> str:
-    return "high" if score >= 67 else "medium" if score >= 34 else "low"
+    return "high" if score >= HIGH_RISK_THRESHOLD else "medium" if score >= 34 else "low"
 
 
 def calculate_scores(track_points: list[dict[str, object]], locations: list[dict[str, object]]) -> list[dict[str, object]]:
