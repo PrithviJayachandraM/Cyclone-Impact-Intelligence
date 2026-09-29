@@ -37,7 +37,7 @@ class VertexGeminiResponder:
 
     def respond(self, question: str, context: dict[str, object]) -> str:
         prompt = (
-            "Answer only from the supplied structured context. State whether values are observed or forecast, "
+            "Answer only from the supplied structured context. State whether values are observed, forecast, or simulation, "
             "do not add facts or numerical values, and never issue an official warning or evacuation order. "
             f"Question: {question}\nStructured context: {json.dumps(context, separators=(',', ':'))}"
         )
@@ -99,6 +99,27 @@ class GroundedAssistant:
             except GeminiUnavailable:
                 provider = "local-fallback"
         return {"answer": answer, "supported": True, "tool": tool, "provider": provider, "context": context, "evidence": context["evidence"], "uncertainty": context["uncertainty"], "safety_notice": "Decision-support only. Official IMD and local government guidance remains authoritative."}
+
+    def explain_scenario(self, result: dict[str, object]) -> dict[str, object]:
+        """Explain a computed simulation using the same responder and grounding checks."""
+        comparison = result["comparison"]
+        rows = list(comparison["locations"])
+        changed = [row for row in rows if row["risk_score_delta"]]
+        if changed:
+            details = "; ".join(f"{row['name']}: {row['baseline_risk_score']} to {row['simulation_risk_score']} ({row['risk_score_delta']:+d})" for row in changed)
+            answer = f"Under this simulated scenario, risk changes are: {details}. These are deterministic model outputs, not observed conditions or an operational forecast."
+        else:
+            answer = "Under this simulated scenario, the deterministic risk scores do not change for the listed locations. This is not an observed condition or an operational forecast."
+        context = {"simulation": True, "scenario": result["scenario"], "baseline": result["baseline"], "simulation_result": result["simulation"], "comparison": comparison, "instruction": "Simulation only. Do not present it as an observation, prediction, warning, or evacuation instruction."}
+        provider = "local-grounded"
+        if self.responder:
+            try:
+                candidate = self.responder.respond("Explain the impact of this simulated scenario.", context)
+                if self._safe_narrative(candidate, context):
+                    answer, provider = candidate, "vertex-gemini"
+            except GeminiUnavailable:
+                provider = "local-fallback"
+        return {"answer": answer, "provider": provider, "context": context, "simulation": True, "safety_notice": "Simulation only; it is not an observation, forecast, warning, or evacuation instruction."}
 
     @staticmethod
     def _select_tool(question: str) -> str:

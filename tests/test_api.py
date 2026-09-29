@@ -13,6 +13,7 @@ from cyclone.forecast import ForecastRepository
 from cyclone.intelligence import AdvisoryRepository, GroundedAssistant
 from cyclone.repository import HistoricalTrackRepository
 from cyclone.risk import RiskRepository
+from cyclone.scenario import ScenarioService
 
 
 class ApiTests(unittest.TestCase):
@@ -24,7 +25,8 @@ class ApiTests(unittest.TestCase):
         risk = RiskRepository(root / "data" / "risk", enrichment.locations)
         forecast = ForecastRepository(root / "data" / "forecast")
         assistant = GroundedAssistant(tracks, enrichment, risk, forecast, AdvisoryRepository(root / "data" / "advisories"))
-        cls.server = ThreadingHTTPServer(("127.0.0.1", 0), create_handler(tracks, enrichment_repository=enrichment, risk_repository=risk, forecast_repository=forecast, assistant=assistant))
+        scenarios = ScenarioService(tracks, enrichment, risk, forecast)
+        cls.server = ThreadingHTTPServer(("127.0.0.1", 0), create_handler(tracks, enrichment_repository=enrichment, risk_repository=risk, forecast_repository=forecast, assistant=assistant, scenario_service=scenarios))
         cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
         cls.thread.start()
 
@@ -87,3 +89,10 @@ class ApiTests(unittest.TestCase):
         status, body = self.post("/query", {"question": "Why is the risk high?", "cyclone_id": "phailin-2013", "valid_time": "2013-10-13T00:00:00Z"})
         payload = json.loads(body)
         self.assertEqual(status, 200); self.assertTrue(payload["supported"]); self.assertEqual(payload["tool"], "get_location_risk"); self.assertTrue(payload["evidence"])
+
+    def test_returns_phase_six_simulation_and_rejects_invalid_parameters(self) -> None:
+        status, body = self.post("/scenario", {"cyclone_id": "phailin-2013", "valid_time": "2013-10-13T00:00:00Z", "parameters": {"track_shift_km": 20, "intensity_multiplier": 1.2, "rainfall_multiplier": 1.1}})
+        payload = json.loads(body)
+        self.assertEqual(status, 200); self.assertEqual(payload["scenario"]["status"], "simulation"); self.assertTrue(payload["explanation"]["simulation"])
+        status, body = self.post("/scenario", {"cyclone_id": "phailin-2013", "parameters": {"intensity_multiplier": 3}})
+        self.assertEqual(status, 400); self.assertIn("intensity_multiplier", json.loads(body)["error"])

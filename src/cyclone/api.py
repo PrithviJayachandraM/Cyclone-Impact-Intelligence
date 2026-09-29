@@ -14,12 +14,13 @@ from cyclone.forecast import ForecastRepository
 from cyclone.intelligence import GroundedAssistant
 from cyclone.repository import HistoricalTrackRepository
 from cyclone.risk import RiskRepository
+from cyclone.scenario import ScenarioService, ScenarioValidationError, ScenarioParameters
 
 
 STATIC_DIRECTORY = Path(__file__).parents[2] / "web"
 
 
-def create_handler(repository: HistoricalTrackRepository, google_maps_api_key: str | None = None, enrichment_repository: EnrichmentRepository | None = None, risk_repository: RiskRepository | None = None, forecast_repository: ForecastRepository | None = None, assistant: GroundedAssistant | None = None) -> type[BaseHTTPRequestHandler]:
+def create_handler(repository: HistoricalTrackRepository, google_maps_api_key: str | None = None, enrichment_repository: EnrichmentRepository | None = None, risk_repository: RiskRepository | None = None, forecast_repository: ForecastRepository | None = None, assistant: GroundedAssistant | None = None, scenario_service: ScenarioService | None = None) -> type[BaseHTTPRequestHandler]:
     class CycloneHandler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:  # noqa: N802
             request = urlparse(self.path)
@@ -54,21 +55,28 @@ def create_handler(repository: HistoricalTrackRepository, google_maps_api_key: s
                 self.send_json(HTTPStatus.NOT_FOUND, {"error": "Not found"})
 
         def do_POST(self) -> None:  # noqa: N802
-            if self.path != "/query":
+            if self.path not in {"/query", "/scenario"}:
                 self.send_json(HTTPStatus.NOT_FOUND, {"error": "Not found"}); return
-            if assistant is None:
+            if self.path == "/query" and assistant is None:
                 self.send_json(HTTPStatus.SERVICE_UNAVAILABLE, {"error": "Grounded assistant is not configured"}); return
+            if self.path == "/scenario" and (scenario_service is None or assistant is None):
+                self.send_json(HTTPStatus.SERVICE_UNAVAILABLE, {"error": "Scenario service is not configured"}); return
             try:
                 length = int(self.headers.get("Content-Length", "0"))
                 if length <= 0 or length > 4096:
                     raise ValueError("request body must be between 1 and 4096 bytes")
                 payload = json.loads(self.rfile.read(length).decode("utf-8"))
-                result = assistant.answer(str(payload.get("question", "")), str(payload.get("cyclone_id", "")), payload.get("valid_time"))
+                if self.path == "/scenario":
+                    result = scenario_service.simulate(str(payload.get("cyclone_id", "")), ScenarioParameters.from_payload(payload.get("parameters")), payload.get("valid_time"))
+                    if result is not None:
+                        result["explanation"] = assistant.explain_scenario(result)
+                else:
+                    result = assistant.answer(str(payload.get("question", "")), str(payload.get("cyclone_id", "")), payload.get("valid_time"))
                 if result is None:
                     self.send_json(HTTPStatus.NOT_FOUND, {"error": "Cyclone not found"})
                 else:
                     self.send_json(HTTPStatus.OK, result)
-            except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as error:
+            except (UnicodeDecodeError, json.JSONDecodeError, ScenarioValidationError, ValueError) as error:
                 self.send_json(HTTPStatus.BAD_REQUEST, {"error": str(error)})
 
         @staticmethod

@@ -4,15 +4,16 @@ Cyclone Impact Intelligence is a decision-support prototype that joins historica
 
 ## Current implementation
 
-The repository implements Phases 0–5 only.
+The repository implements Phases 0–6 only.
 
 - Phase 1: sourced Phailin 2013 replay data, deterministic track normalization, read API, and map.
 - Phase 2: rainfall, elevation, and population feature vectors for demonstration grids with provenance and layer controls.
 - Phase 3: deterministic 0–100 baseline risk scores, bands, factor contributions, and clickable heatmap.
 - Phase 4: reproducible constant-velocity/intensity-drift forecasts at 6, 12, and 18 hours; forecast timestamps, horizons, uncertainty metadata, chronological backtest metrics, projected-risk calculation, and observed-versus-forecast map rendering. Details: [docs/phase4-forecast.md](docs/phase4-forecast.md).
 - Phase 5: grounded situation briefings and natural-language Q&A. The assistant uses narrow read-only backend tools for cyclone state, location risk, exposure, and curated approved advisory references. Every result returns structured context, provenance/timestamps, uncertainty, and a safety boundary.
+- Phase 6: deterministic what-if simulation for copied track, intensity, and rainfall inputs. It reruns the Phase 3 risk engine, returns baseline-versus-simulation deltas, renders side-by-side maps, and grounds a concise simulation explanation in both result sets.
 
-Scenario comparison, operational alerts, evacuation/route advice, and all Phase 6+ functionality remain out of scope.
+Operational alerts, evacuation/route advice, and all Phase 7+ functionality remain out of scope.
 
 ## Architecture and data flow
 
@@ -21,6 +22,14 @@ Scenario comparison, operational alerts, evacuation/route advice, and all Phase 
 The browser distinguishes observed tracks (solid red) from predicted paths (dashed purple). Selecting an observed or forecast time switches the heatmap to the matching valid time. The Phase 5 assistant sends that selected time to the backend, which retrieves structured evidence before creating a briefing. Forecast facts are labelled as forecasts and include uncertainty; observed facts remain distinct.
 
 In a cloud deployment, Cloud Storage holds raw data, BigQuery GIS stores structured features/forecast/risk outputs, and Cloud Run hosts the API. Gemini is isolated behind the backend's narrow controlled tools: it has neither direct BigQuery access nor browser credentials. Local execution uses a deterministic grounded responder and never contacts GCP, Earth Engine, Vertex AI, or Gemini.
+
+## What-If Scenario Simulation
+
+Phase 6 treats every what-if request as a **simulation**, never an observation or official forecast. It copies the selected baseline track and Phase 2 location features, shifts the copied track east/west, scales copied wind intensity and/or rainfall, then invokes the existing Phase 3 `calculate_scores` risk engine. The persisted baseline track and risk artifacts are not changed.
+
+Supported demo parameters are deliberately bounded for an interactive prototype: `track_shift_km` from -100 to 100 (positive is east), `intensity_multiplier` from 0.5 to 1.5, and `rainfall_multiplier` from 0.5 to 1.5. At least one value must differ from the baseline (0 km, 1.0x, 1.0x). These bounds are implementation safeguards; the source documents specify the parameter types but not operational limits.
+
+Use the **What-If Scenario Simulation** controls below the map and run, for example, a 20 km east shift with 1.2x intensity. The page displays baseline and simulation maps at the same extent and lists the risk-score delta for each location. The Phase 5 assistant architecture receives the structured baseline, simulation, and comparison context to produce the accompanying explanation. Its numerical source remains the deterministic scenario engine.
 
 ## Project layout
 
@@ -70,8 +79,9 @@ Cloud table definitions are available in [phase4_schema.sql](infra/bigquery/phas
 - `GET /cyclones/{cyclone_id}/forecast`
 - `GET /cyclones/{cyclone_id}/forecast/metrics`
 - `POST /query` with `question`, `cyclone_id`, and optional `valid_time`
+- `POST /scenario` with `cyclone_id`, optional `valid_time`, and `parameters`
 
-All endpoints remain read-only. `POST /query` supports situation summaries, risk explanations, exposure summaries, and curated advisory retrieval. It returns its selected tool, structured context, evidence citations, uncertainty, and safety notice. The service refuses to issue evacuation orders, alerts, routes, or other operational instructions.
+All endpoints remain read-only. `POST /query` supports situation summaries, risk explanations, exposure summaries, and curated advisory retrieval. `POST /scenario` calculates but does not persist a simulation, returning map-ready baseline/simulation tracks, risk scores, deltas, and a grounded explanation. The service refuses to issue evacuation orders, alerts, routes, or other operational instructions.
 
 ## Testing
 
@@ -80,7 +90,7 @@ $env:PYTHONPATH = "src"
 python -m unittest discover -s tests -v
 ```
 
-Tests cover Phases 1–4 plus the Phase 5 tool selection, structured risk/exposure context, observed-versus-forecast labelling, advisory retrieval, safety refusal, API contract, and environment configuration. They run without live cloud or AI services.
+Tests cover Phases 1–5 plus Phase 6 parameter validation, boundaries, deterministic repeatability, baseline immutability, track/intensity/rainfall transformations, risk deltas, grounded simulation context, and HTTP error handling. They run without live cloud or AI services.
 
 ## Security
 
