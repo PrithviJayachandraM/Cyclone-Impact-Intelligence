@@ -52,8 +52,8 @@ def create_handler(repository: HistoricalTrackRepository, google_maps_api_key: s
                 self.location_response(repository.track_geojson(self.cyclone_id(path, "track")), "Cyclone not found")
             elif path in {"/", "/index.html"}:
                 self.send_file(STATIC_DIRECTORY / "index.html")
-            elif path == "/app.js":
-                self.send_file(STATIC_DIRECTORY / "app.js")
+            elif path in {"/app.js", "/runtime.js"}:
+                self.send_file(STATIC_DIRECTORY / path.removeprefix("/"))
             else:
                 self.send_json(HTTPStatus.NOT_FOUND, {"error": "Not found"})
 

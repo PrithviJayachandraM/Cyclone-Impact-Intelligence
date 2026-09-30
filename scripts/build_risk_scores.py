@@ -18,7 +18,11 @@ if __name__ == "__main__":
     forecasts = ForecastRepository(Path(sys.argv[3]))
     output_directory = Path(sys.argv[4])
     output_directory.mkdir(parents=True, exist_ok=True)
-    scores = calculate_scores(tracks.points, enrichment.locations)
+    scores = []
+    cyclone_ids = {point["cyclone_id"] for point in tracks.points}
+    for cyclone_id in cyclone_ids:
+        observed = [point for point in tracks.points if point["cyclone_id"] == cyclone_id]
+        scores.extend(calculate_scores(observed, enrichment.locations))
     for forecast in forecasts.points:
         scores.extend(calculate_scores([forecast], enrichment.locations))
     payload = {"model_version": MODEL_VERSION, "scores": scores}

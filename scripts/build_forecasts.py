@@ -14,6 +14,13 @@ if __name__ == "__main__":
     tracks = HistoricalTrackRepository(Path(sys.argv[1]))
     output_directory = Path(sys.argv[2])
     output_directory.mkdir(parents=True, exist_ok=True)
-    payload = {"model_version": MODEL_VERSION, "points": forecast_points(tracks.points), "evaluation": evaluate_backtest(tracks.points)}
+    groups = {}
+    for point in tracks.points:
+        groups.setdefault(point["cyclone_id"], []).append(point)
+    payload = {
+        "model_version": MODEL_VERSION,
+        "points": [point for group in groups.values() for point in forecast_points(group)],
+        "evaluation": {cyclone_id: evaluate_backtest(group) for cyclone_id, group in groups.items()},
+    }
     (output_directory / "forecast_points.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     print(f"Built {len(payload['points'])} forecast point(s) and chronological evaluation metrics.")

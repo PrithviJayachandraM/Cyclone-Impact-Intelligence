@@ -4,7 +4,7 @@ Cyclone Impact Intelligence is a decision-support prototype that joins historica
 
 ## Current implementation
 
-The repository implements Phases 0–7 only.
+The repository implements Phases 0–9 only.
 
 - Phase 1: sourced Phailin 2013 replay data, deterministic track normalization, read API, and map.
 - Phase 2: rainfall, elevation, and population feature vectors for demonstration grids with provenance and layer controls.
@@ -13,8 +13,23 @@ The repository implements Phases 0–7 only.
 - Phase 5: grounded situation briefings and natural-language Q&A. The assistant uses narrow read-only backend tools for cyclone state, location risk, exposure, and curated approved advisory references. Every result returns structured context, provenance/timestamps, uncertainty, and a safety boundary.
 - Phase 6: deterministic what-if simulation for copied track, intensity, and rainfall inputs. It reruns the Phase 3 risk engine, returns baseline-versus-simulation deltas, renders side-by-side maps, and grounds a concise simulation explanation in both result sets.
 - Phase 7: event-driven, threshold-based risk alerts with local Pub/Sub-style processing, Eventarc-compatible event handling, dashboard freshness state, deduplication, and an optional Firebase Cloud Messaging adapter.
+- Phase 8: reproducible feasibility evaluation, frozen Phailin demo evidence, data/risk/geospatial checks, grounded-assistant golden questions, local performance measurements, reliability results, and documented limitations.
+- Phase 9: a responsive, map-first Cyclone Intelligence Command Center that presents the existing replay, forecast, risk, grounded-assistant, simulation, and alert workflows as one demonstration experience.
 
-Feasibility evaluation, evacuation/route advice, and all Phase 8+ functionality remain out of scope.
+The replay catalog now includes verified sampled IMD best-track data for Phailin (2013), Hudhud (2014), and Fani (2019). Phailin remains the only fully enriched and risk-scored demo. Hudhud and Fani deliberately display as track-only historical replays until equivalent location, rainfall, elevation, and population coverage is ingested; the UI does not fabricate risk, exposure, scenario, or alert results for them.
+
+Evacuation/route advice and future functionality remain out of scope.
+
+## Command Center frontend
+
+The browser experience is a dependency-free responsive web application served by the existing Python API. It uses the current endpoints and deterministic Phailin replay only; it does not add fake values or change risk, forecast, Gemini, simulation, or alert logic.
+
+- **Overview** presents cyclone identity, peak risk, selected-grid population exposure, observed wind, and replay/system status.
+- **Cyclone Map** is the visual center. It distinguishes solid red observed tracks from dashed purple predicted tracks, toggles existing environmental/exposure layers, and supports grid-level risk investigation.
+- **Forecast**, **Risk Analysis**, **What-If Simulation**, **Gemini Intelligence**, and **Alerts** are focused views over the existing backend contracts.
+- Observed, predicted, and simulated values use explicit badges and language throughout. The scenario remains clearly labelled as a simulation, not a forecast.
+
+Click **Start Phailin replay demo** for the stable walkthrough: map, grid investigation, grounded question, 20 km east / 1.2x intensity / 1.1x rainfall simulation, comparison, then local alert evaluation. Use the cyclone selector to browse the additional track-only historical replays.
 
 ## Architecture and data flow
 
@@ -45,6 +60,12 @@ The local `ALERT_EVENT_TRANSPORT=local` path uses the same validated workflow sy
 
 Alert receipt IDs are derived from the unchanged alert condition, so duplicate Pub/Sub delivery does not send a second notification during the running service lifetime. Notification failures are not marked as sent; the Eventarc ingress returns `503` so the managed event platform may retry the message. Alerts are demo decision-support signals only, not official warnings or evacuation instructions. Deployment details and least-privilege service roles are in [phase7-eventing.md](infra/gcp/phase7-eventing.md).
 
+## Feasibility evidence and final demo
+
+Phase 8 freezes one reproducible historical replay: **Phailin 2013** at `2013-10-13T00:00:00Z`, with two local coastal demonstration grids. The fixed demo uses a 20 km east track shift, 1.2x intensity, and 1.1x rainfall. Its expected deterministic scenario results are 85 to 88 for grid 01 and 66 to 70 for grid 02; the configured alert threshold of 67 sends one alert for grid 01 and suppresses a repeated unchanged event.
+
+The complete evidence pack is in [docs/evaluation](docs/evaluation/README.md), including data quality, geospatial, risk, forecast/model, Gemini, performance, reliability, usability, limitations, final metrics, the [architecture story](docs/evaluation/architecture.md), and the [demo runbook](docs/evaluation/final-demo.md). It records local evidence only and marks unconfigured live GCP/Vertex/Firebase services as **Not Executed**.
+
 ## Project layout
 
 ```text
@@ -56,8 +77,9 @@ data/risk/            Baseline and forecast-projected risk scores
 data/advisories/      Curated approved advisory references for Phase 5 retrieval
 src/cyclone/          API, alerts, configuration, intelligence, enrichment, forecast, and risk logic
 scripts/              Commands rebuilding derived local artifacts
-web/                  Observed/forecast map and risk UI
+web/                  Responsive command-center map and frontend assets
 infra/gcp/            Cloud deployment guidance, including Phase 7 eventing
+docs/evaluation/      Phase 8 reproducible evidence and final demo runbook
 tests/                Deterministic unit and HTTP integration tests
 ```
 
@@ -69,10 +91,13 @@ Python 3.11+ is required. No third-party Python packages are required. Export va
 $env:PYTHONPATH = "src"
 python scripts/build_forecasts.py data/normalized data/forecast
 python scripts/build_risk_scores.py data/normalized data/enriched data/forecast data/risk
+python scripts/run_evaluation.py
 python -m cyclone.main
 ```
 
 Open `http://127.0.0.1:8080`. The **Track/risk time** selector switches between the latest observed track state and 6/12/18-hour forecasts. The map renders observations as solid red and projections as dashed purple. Click a colored grid to inspect risk contributions for that selected time. Use the **Grounded assistant** section to ask for a situation summary, why risk is high, highest exposure, or approved guidance. Use **Run local risk evaluation** to exercise the Phase 7 trigger, processing, threshold decision, notification adapter, and freshness display locally.
+
+The dashboard is optimized for desktop and laptop presentation, while its navigation and map panels collapse for tablet-sized layouts. It requires no browser-exposed secrets or additional frontend environment variables. `GOOGLE_MAPS_API_KEY` remains optional for the existing map integration; without it the command center uses its local coordinate-map fallback.
 
 ## Configuration and cloud prerequisites
 
@@ -107,9 +132,10 @@ For Phase 7, retain `ALERT_EVENT_TRANSPORT=local` and `NOTIFICATION_PROVIDER=loc
 ```powershell
 $env:PYTHONPATH = "src"
 python -m unittest discover -s tests -v
+python scripts/run_evaluation.py
 ```
 
-Tests cover Phases 1–6 plus Phase 7 threshold boundaries, multiple locations, malformed Pub/Sub messages, duplicate suppression, notification failures, Firebase request construction, stale-state reporting, configuration validation, and HTTP workflow integration. They run without live cloud or AI services.
+Tests cover Phases 1–7 plus Phase 8 frozen data-quality validation, extreme risk bounds/contribution checks, a seven-question grounded assistant evaluation, and Phase 9 frontend asset/contracts for the command-center workflow. They run without live cloud or AI services. `scripts/run_evaluation.py` refreshes the JSON evidence pack used by the final demo.
 
 ## Security
 

@@ -11,7 +11,8 @@ class RiskEngineTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         root = Path(__file__).parents[1]
-        cls.points = json.loads((root / "data" / "normalized" / "track_points.json").read_text(encoding="utf-8"))
+        all_points = json.loads((root / "data" / "normalized" / "track_points.json").read_text(encoding="utf-8"))
+        cls.points = [point for point in all_points if point["cyclone_id"] == "phailin-2013"]
         cls.locations = json.loads((root / "data" / "enriched" / "location_features.json").read_text(encoding="utf-8"))["locations"]
 
     def test_calculates_deterministic_explainable_scores(self) -> None:

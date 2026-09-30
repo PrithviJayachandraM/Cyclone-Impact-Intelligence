@@ -132,7 +132,7 @@ class GroundedAssistant:
             return "get_exposure_summary"
         if any(word in lower for word in ("why", "risk", "high")):
             return "get_location_risk"
-        if any(word in lower for word in ("summar", "current", "situation", "status", "state", "track", "forecast", "cyclone")):
+        if any(word in lower for word in ("summar", "current", "situation", "status", "state", "track", "forecast", "predict", "observed", "timestamp", "source", "cyclone")):
             return "get_cyclone_state"
         return "unsupported"
 

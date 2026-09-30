@@ -51,7 +51,13 @@ class ApiTests(unittest.TestCase):
 
     def test_lists_cyclones(self) -> None:
         status, _, body = self.get("/cyclones")
-        self.assertEqual(status, 200); self.assertEqual(json.loads(body)[0]["cyclone_id"], "phailin-2013")
+        self.assertEqual(status, 200); self.assertEqual({event["cyclone_id"] for event in json.loads(body)}, {"phailin-2013", "hudhud-2014", "fani-2019"})
+
+    def test_returns_added_historical_track_without_inventing_risk_coverage(self) -> None:
+        status, _, body = self.get("/cyclones/hudhud-2014/track")
+        self.assertEqual(status, 200); self.assertEqual(len(json.loads(body)["features"]), 7)
+        status, _, body = self.get("/cyclones/hudhud-2014/risk")
+        self.assertEqual(status, 200); self.assertEqual(json.loads(body)["features"], [])
 
     def test_returns_track_geojson(self) -> None:
         status, _, body = self.get("/cyclones/phailin-2013/track")
@@ -63,7 +69,7 @@ class ApiTests(unittest.TestCase):
 
     def test_serves_map_page(self) -> None:
         status, headers, body = self.get("/")
-        self.assertEqual(status, 200); self.assertIn("text/html", headers["Content-Type"]); self.assertIn(b"Historical cyclone tracks", body)
+        self.assertEqual(status, 200); self.assertIn("text/html", headers["Content-Type"]); self.assertIn(b"Cyclone Intelligence Command Center", body)
 
     def test_returns_phase_two_layers_and_location_feature_vector(self) -> None:
         status, _, body = self.get("/cyclones/phailin-2013/layers")

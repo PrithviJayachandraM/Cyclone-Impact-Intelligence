@@ -110,4 +110,8 @@ class ForecastRepository:
         return [point for point in self.points if point["cyclone_id"] == cyclone_id]
 
     def metrics(self, cyclone_id: str) -> dict[str, object] | None:
-        return self.evaluation if self.forecast(cyclone_id) else None
+        if not self.forecast(cyclone_id):
+            return None
+        if "model_version" in self.evaluation:
+            return self.evaluation
+        return self.evaluation.get(cyclone_id)

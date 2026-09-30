@@ -10,7 +10,8 @@ from cyclone.forecast import evaluate_backtest, forecast_points
 class ForecastTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.points = json.loads((Path(__file__).parents[1] / "data" / "normalized" / "track_points.json").read_text(encoding="utf-8"))
+        all_points = json.loads((Path(__file__).parents[1] / "data" / "normalized" / "track_points.json").read_text(encoding="utf-8"))
+        cls.points = [point for point in all_points if point["cyclone_id"] == "phailin-2013"]
 
     def test_generates_reproducible_future_points_with_metadata(self) -> None:
         first = forecast_points(self.points, (6, 12, 18))

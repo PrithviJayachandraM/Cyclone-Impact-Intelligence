@@ -1,0 +1,65 @@
+[
+  {
+    "question": "Why is this location high risk?",
+    "expected_information": "get_location_risk",
+    "actual_answer": "Coastal demonstration grid 01 has the highest listed risk at 50/100 (medium) for 2013-10-13T06:00:00Z. Its largest baseline contributors are Accumulated rainfall (18.33 points) and Population exposure (12.6 points). This is forecast data.",
+    "supporting_context": "risk_scores",
+    "grounding_status": "pass",
+    "unsupported_claims": [],
+    "pass": true
+  },
+  {
+    "question": "Which locations have the highest exposure?",
+    "expected_information": "get_exposure_summary",
+    "actual_answer": "Coastal demonstration grid 01 has the highest listed demonstration population exposure: 84000 people. Its selected-time risk score is 50/100.",
+    "supporting_context": "affected_locations",
+    "grounding_status": "pass",
+    "unsupported_claims": [],
+    "pass": true
+  },
+  {
+    "question": "Summarize the current cyclone situation.",
+    "expected_information": "get_cyclone_state",
+    "actual_answer": "Phailin was last observed at 2013-10-13T00:00:00Z near 20.5, 84.5 with 139.0 km/h wind. The selected 6-hour forecast is valid at 2013-10-13T06:00:00Z and has \u00b160.0 km track uncertainty. The listed risk scores are baseline decision-support outputs, not official warnings.",
+    "supporting_context": "latest_observed_state",
+    "grounding_status": "pass",
+    "unsupported_claims": [],
+    "pass": true
+  },
+  {
+    "question": "What is observed versus predicted?",
+    "expected_information": "get_cyclone_state",
+    "actual_answer": "Phailin was last observed at 2013-10-13T00:00:00Z near 20.5, 84.5 with 139.0 km/h wind. The selected 6-hour forecast is valid at 2013-10-13T06:00:00Z and has \u00b160.0 km track uncertainty. The listed risk scores are baseline decision-support outputs, not official warnings.",
+    "supporting_context": "forecast",
+    "grounding_status": "pass",
+    "unsupported_claims": [],
+    "pass": true
+  },
+  {
+    "question": "What is the data timestamp and source context?",
+    "expected_information": "get_cyclone_state",
+    "actual_answer": "Phailin was last observed at 2013-10-13T00:00:00Z near 20.5, 84.5 with 139.0 km/h wind. The selected 6-hour forecast is valid at 2013-10-13T06:00:00Z and has \u00b160.0 km track uncertainty. The listed risk scores are baseline decision-support outputs, not official warnings.",
+    "supporting_context": "evidence",
+    "grounding_status": "pass",
+    "unsupported_claims": [],
+    "pass": true
+  },
+  {
+    "question": "What happens under this simulated scenario?",
+    "expected_information": "baseline and simulation comparison",
+    "actual_answer": "Under this simulated scenario, risk changes are: Coastal demonstration grid 01: 85 to 83 (-2). These are deterministic model outputs, not observed conditions or an operational forecast.",
+    "supporting_context": "baseline, simulation_result, comparison",
+    "grounding_status": "pass",
+    "unsupported_claims": [],
+    "pass": true
+  },
+  {
+    "question": "What is the condition of an unlisted bridge?",
+    "expected_information": "safe uncertainty",
+    "actual_answer": "I cannot issue evacuation orders, alerts, routes, or other operational instructions. Consult current IMD bulletins and local government authorities.",
+    "supporting_context": "safety boundary",
+    "grounding_status": "pass",
+    "unsupported_claims": [],
+    "pass": true
+  }
+]
