@@ -1,0 +1,11 @@
+.gcloudignore
+.git
+.gitignore
+.env
+venv/
+__pycache__/
+*.pyc
+*.docx
+~$*.docx
+tests/
+docs/
