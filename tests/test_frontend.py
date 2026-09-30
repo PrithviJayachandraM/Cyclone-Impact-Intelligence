@@ -14,7 +14,7 @@ class FrontendContractTests(unittest.TestCase):
     def test_command_center_exposes_real_workflow_sections(self) -> None:
         for heading in ("Cyclone map", "Forecast trajectory", "Risk analysis", "What-if scenario simulation", "Gemini intelligence", "Alerts center"):
             self.assertIn(heading, self.html)
-        self.assertIn('src="/runtime.js"', self.html)
+        self.assertIn('src="/runtime.js?v=3"', self.html)
 
     def test_frontend_uses_existing_backend_contracts(self) -> None:
         for endpoint in ("/cyclones", "/locations/", "/scenario", "/query", "/alerts/status", "/alerts/trigger"):

@@ -116,7 +116,10 @@ def create_handler(repository: HistoricalTrackRepository, google_maps_api_key: s
             if not path.is_file():
                 self.send_json(HTTPStatus.NOT_FOUND, {"error": "Not found"}); return
             body = path.read_bytes()
-            self.send_response(HTTPStatus.OK); self.send_header("Content-Type", f"{mimetypes.guess_type(path.name)[0] or 'application/octet-stream'}; charset=utf-8"); self.send_header("Content-Length", str(len(body))); self.end_headers(); self.wfile.write(body)
+            self.send_response(HTTPStatus.OK); self.send_header("Content-Type", f"{mimetypes.guess_type(path.name)[0] or 'application/octet-stream'}; charset=utf-8"); self.send_header("Content-Length", str(len(body)))
+            if path.suffix == ".js":
+                self.send_header("Cache-Control", "no-store")
+            self.end_headers(); self.wfile.write(body)
 
         def log_message(self, format: str, *args: object) -> None:
             return
